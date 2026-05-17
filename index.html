@@ -138,10 +138,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 <canvas id="tc"></canvas>
 
 <svg id="zh" width="44" height="44" viewBox="0 0 44 44">
-  <rect id="zr" x="3" y="3" width="38" height="38" rx="9" fill="#111" stroke="rgba(255,255,255,.28)" stroke-width="1.5"/>
-  <line id="zl1" x1="12" y1="15" x2="32" y2="15" stroke="rgba(255,255,255,.88)" stroke-width="2.5" stroke-linecap="round"/>
-  <line id="zl2" x1="12" y1="22" x2="32" y2="22" stroke="rgba(255,255,255,.5)"  stroke-width="2.5" stroke-linecap="round"/>
-  <line id="zl3" x1="12" y1="29" x2="32" y2="29" stroke="rgba(255,255,255,.25)" stroke-width="2.5" stroke-linecap="round"/>
+  <rect id="zr" x="3" y="3" width="38" height="38" rx="9" fill="#1c1b18" stroke="rgba(0,0,0,.15)" stroke-width="1.5"/>
+  <line id="zl1" x1="12" y1="15" x2="32" y2="15" stroke="rgba(0,0,0,.88)" stroke-width="2.5" stroke-linecap="round"/>
+  <line id="zl2" x1="12" y1="22" x2="32" y2="22" stroke="rgba(0,0,0,.5)"  stroke-width="2.5" stroke-linecap="round"/>
+  <line id="zl3" x1="12" y1="29" x2="32" y2="29" stroke="rgba(0,0,0,.25)" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
 <div id="hint">Pull down to reveal</div>
 
@@ -156,9 +156,9 @@ const LAYERS=[
   {page:'p3', nextZ:1}, // peel p3 → reveals p4 (z:1)
 ];
 const THEMES=[
-  {fill:'#111',    stroke:'rgba(255,255,255,.28)', line:'255,255,255'},
-  {fill:'#0a0618', stroke:'rgba(160,140,255,.4)',  line:'200,185,255'},
-  {fill:'#0a0020', stroke:'rgba(255,200,80,.4)',   line:'255,220,100'},
+  {fill:'#1c1b18', stroke:'rgba(0,0,0,.15)',       line:'0,0,0',       teeth:'80,75,70'},
+  {fill:'#0a0618', stroke:'rgba(160,140,255,.4)',  line:'200,185,255', teeth:'170,145,255'},
+  {fill:'#0a0020', stroke:'rgba(255,200,80,.4)',   line:'255,220,100', teeth:'255,200,80'},
 ];
 let layer=0; // which layer we're currently peeling
 
@@ -175,11 +175,10 @@ const FS=`precision mediump float;
 varying vec2 vUV;varying float vLight;uniform sampler2D uTex;
 void main(){
   vec4 c=texture2D(uTex,vUV);
-  // vLight < 0.5 signals a back face — render as dark opaque cloth interior
   if(vLight < 0.5){
-    // Back of fabric: dark with slight warm undertone, fully opaque
     float b=vLight*2.0; // 0..1 range for back faces
-    gl_FragColor=vec4(0.08*b, 0.07*b, 0.12*b, 1.0);
+    // Back of fabric: dynamic shading based on fabric color (12% base + linear shadow multiplier)
+    gl_FragColor=vec4(c.rgb * (0.12 + b * 0.18), 1.0);
   } else {
     gl_FragColor=vec4(c.rgb*vLight,1.0);
   }
@@ -201,14 +200,14 @@ gl.enableVertexAttribArray(aPos);gl.enableVertexAttribArray(aUV);gl.enableVertex
 const pb=gl.createBuffer(),ub=gl.createBuffer(),lb=gl.createBuffer(),ib=gl.createBuffer();
 
 // ── Fabric texture ─────────────────────────────────────────────
-function mkFabric(){
+function mkFabric(bgColor, threadColor1, threadColor2, noiseRange = 46){
   const S=256,oc=document.createElement('canvas');oc.width=oc.height=S;
   const o=oc.getContext('2d');
-  o.fillStyle='#111020';o.fillRect(0,0,S,S);
-  for(let x=0;x<S;x+=3){const a=(0.055+(Math.sin(x*1.4)*.5+.5)*.085).toFixed(3);o.strokeStyle=`rgba(175,155,255,${a})`;o.lineWidth=x%6===0?1.4:.7;o.beginPath();o.moveTo(x,0);o.lineTo(x,S);o.stroke();}
-  for(let y=0;y<S;y+=3){const a=(0.038+(Math.sin(y*1.7)*.5+.5)*.06).toFixed(3);o.strokeStyle=`rgba(115,95,205,${a})`;o.lineWidth=y%6===0?1.1:.55;o.beginPath();o.moveTo(0,y);o.lineTo(S,y);o.stroke();}
+  o.fillStyle=bgColor;o.fillRect(0,0,S,S);
+  for(let x=0;x<S;x+=3){const a=(0.055+(Math.sin(x*1.4)*.5+.5)*.085).toFixed(3);o.strokeStyle=`rgba(${threadColor1},${a})`;o.lineWidth=x%6===0?1.4:.7;o.beginPath();o.moveTo(x,0);o.lineTo(x,S);o.stroke();}
+  for(let y=0;y<S;y+=3){const a=(0.038+(Math.sin(y*1.7)*.5+.5)*.06).toFixed(3);o.strokeStyle=`rgba(${threadColor2},${a})`;o.lineWidth=y%6===0?1.1:.55;o.beginPath();o.moveTo(0,y);o.lineTo(S,y);o.stroke();}
   const id=o.getImageData(0,0,S,S),d=id.data;
-  for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*46;d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}
+  for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*noiseRange;d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}
   o.putImageData(id,0,0);
   const sh2=o.createLinearGradient(0,0,S*.55,S*.55);sh2.addColorStop(0,'rgba(255,255,255,.11)');sh2.addColorStop(1,'rgba(255,255,255,0)');o.fillStyle=sh2;o.fillRect(0,0,S,S);
   const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
@@ -219,7 +218,11 @@ function mkFabric(){
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
   gl.generateMipmap(gl.TEXTURE_2D);return t;
 }
-const fab=mkFabric();
+const textures = [
+  mkFabric('#f4f3ef', '160,155,140', '130,125,110', 20), // Layer 0 fabric (Page 1)
+  mkFabric('#07050e', '175,155,255', '115,95,205', 30), // Layer 1 fabric (Page 2)
+  mkFabric('#0d001a', '255,180,50', '200,100,255', 36),  // Layer 2 fabric (Page 3)
+];
 
 // ── Physics ────────────────────────────────────────────────────
 const PCOLS=22,ROWS=28,GRAV=0.55,DAMP=0.975,ITERS=3,SAG=1.15;
@@ -245,9 +248,21 @@ function build(){
   }
 }
 
+function updateHandleStyle(){
+  if(layer<LAYERS.length){
+    const t=THEMES[layer];
+    document.getElementById('zr').setAttribute('fill',t.fill);
+    document.getElementById('zr').setAttribute('stroke',t.stroke);
+    [['zl1','.88'],['zl2','.5'],['zl3','.25']].forEach(([id,a])=>{
+      document.getElementById(id).setAttribute('stroke',`rgba(${t.line},${a})`);
+    });
+  }
+}
+
 function reset(){
   zipRow=0;active=false;done=false;dragging=false;
   document.getElementById('zh').style.top='-22px';
+  updateHandleStyle();
   build();
 }
 
@@ -285,15 +300,7 @@ function advance(){
   const el=document.getElementById(LAYERS[layer].page);
   el.style.display='none';
   layer++;
-  // Style handle for next layer
-  if(layer<LAYERS.length){
-    const t=THEMES[layer];
-    document.getElementById('zr').setAttribute('fill',t.fill);
-    document.getElementById('zr').setAttribute('stroke',t.stroke);
-    [['zl1','.88'],['zl2','.5'],['zl3','.25']].forEach(([id,a])=>{
-      document.getElementById(id).setAttribute('stroke',`rgba(${t.line},${a})`);
-    });
-  } else {
+  if(layer>=LAYERS.length){
     document.getElementById('zh').classList.add('done');
     document.getElementById('hint').style.opacity='0';
   }
@@ -333,17 +340,18 @@ function panel(getFn,flipU){
 
 function teeth(){
   tctx.clearRect(0,0,W,H);if(!active||done)return;
-  tctx.save();tctx.strokeStyle='rgba(255,255,255,.07)';tctx.lineWidth=1;tctx.setLineDash([3,8]);
+  const tCol = THEMES[layer]?.teeth || '220,205,255';
+  tctx.save();tctx.strokeStyle=`rgba(${THEMES[layer]?.line || '255,255,255'},.07)`;tctx.lineWidth=1;tctx.setLineDash([3,8]);
   tctx.beginPath();tctx.moveTo(W/2,zipRow*sy);tctx.lineTo(W/2,H);tctx.stroke();tctx.setLineDash([]);tctx.restore();
   for(let r=1;r<ROWS;r++){
     const lpt=lp(r,PCOLS-1),rpt=rp(r,0);
     if(r<zipRow){
-      tctx.fillStyle='rgba(220,205,255,.38)';
+      tctx.fillStyle=`rgba(${tCol},.38)`;
       tctx.beginPath();tctx.roundRect(lpt.x-7,lpt.y-3.5,7,7,1.5);tctx.fill();
       tctx.beginPath();tctx.roundRect(rpt.x,rpt.y-3.5,7,7,1.5);tctx.fill();
     }else{
       const mx=(lpt.x+rpt.x)/2,my=(lpt.y+rpt.y)/2;
-      tctx.fillStyle='rgba(220,205,255,.9)';
+      tctx.fillStyle=`rgba(${tCol},.9)`;
       tctx.beginPath();tctx.roundRect(mx-9,my-3.5,7,7,1.5);tctx.fill();
       tctx.beginPath();tctx.roundRect(mx+2,my-3.5,7,7,1.5);tctx.fill();
     }
@@ -353,7 +361,7 @@ function teeth(){
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
   if(active&&!done&&zipRow>0){
-    gl.bindTexture(gl.TEXTURE_2D,fab);gl.uniform1i(uTex,0);
+    gl.bindTexture(gl.TEXTURE_2D,textures[layer]);gl.uniform1i(uTex,0);
     panel(lp,false);panel(rp,true);
   }
   teeth();
