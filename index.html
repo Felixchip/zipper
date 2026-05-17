@@ -77,6 +77,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 #zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
 #zh.done{opacity:0;pointer-events:none;}
 #hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);z-index:20;pointer-events:none;letter-spacing:.1em;text-transform:uppercase;}
+.page-clone {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  transform-style: preserve-3d;
+  will-change: transform, clip-path;
+}
 </style>
 </head>
 <body>
@@ -147,84 +156,23 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 <script>
 const W=window.innerWidth, H=window.innerHeight;
-
-// Pages in peel order — p1 is on top (z:4), p4 at bottom (z:1)
-// Peeling p1 reveals p2, peeling p2 reveals p3, peeling p3 reveals p4
 const LAYERS=[
-  {page:'p1', nextZ:3}, // peel p1 → reveals p2 (z:3)
-  {page:'p2', nextZ:2}, // peel p2 → reveals p3 (z:2)
-  {page:'p3', nextZ:1}, // peel p3 → reveals p4 (z:1)
+  {page:'p1', nextZ:3},
+  {page:'p2', nextZ:2},
+  {page:'p3', nextZ:1},
 ];
 const THEMES=[
   {fill:'#1c1b18', stroke:'rgba(0,0,0,.15)',       line:'0,0,0',       teeth:'80,75,70'},
   {fill:'#0a0618', stroke:'rgba(160,140,255,.4)',  line:'200,185,255', teeth:'170,145,255'},
   {fill:'#0a0020', stroke:'rgba(255,200,80,.4)',   line:'255,220,100', teeth:'255,200,80'},
 ];
-let layer=0; // which layer we're currently peeling
+let layer=0;
 
-// ── WebGL ──────────────────────────────────────────────────────
 const cv=document.getElementById('cv');
 const tc=document.getElementById('tc');
 cv.width=tc.width=W; cv.height=tc.height=H;
 const tctx=tc.getContext('2d');
 
-const VS=`attribute vec2 aPos;attribute vec2 aUV;attribute float aLight;
-varying vec2 vUV;varying float vLight;uniform vec2 uRes;
-void main(){vec2 c=(aPos/uRes)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0,1);vUV=aUV;vLight=aLight;}`;
-const FS=`precision mediump float;
-varying vec2 vUV;varying float vLight;uniform sampler2D uTex;
-void main(){
-  vec4 c=texture2D(uTex,vUV);
-  if(vLight < 0.5){
-    float b=vLight*2.0; // 0..1 range for back faces
-    // Back of fabric: dynamic shading based on fabric color (12% base + linear shadow multiplier)
-    gl_FragColor=vec4(c.rgb * (0.12 + b * 0.18), 1.0);
-  } else {
-    gl_FragColor=vec4(c.rgb*vLight,1.0);
-  }
-}`;
-const gl=cv.getContext('webgl',{antialias:true,alpha:true});
-function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x;}
-const prog=gl.createProgram();
-gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));
-gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
-gl.linkProgram(prog);gl.useProgram(prog);
-gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-gl.viewport(0,0,W,H);
-gl.uniform2f(gl.getUniformLocation(prog,'uRes'),W,H);
-const aPos=gl.getAttribLocation(prog,'aPos');
-const aUV=gl.getAttribLocation(prog,'aUV');
-const aLight=gl.getAttribLocation(prog,'aLight');
-const uTex=gl.getUniformLocation(prog,'uTex');
-gl.enableVertexAttribArray(aPos);gl.enableVertexAttribArray(aUV);gl.enableVertexAttribArray(aLight);
-const pb=gl.createBuffer(),ub=gl.createBuffer(),lb=gl.createBuffer(),ib=gl.createBuffer();
-
-// ── Fabric texture ─────────────────────────────────────────────
-function mkFabric(bgColor, threadColor1, threadColor2, noiseRange = 46){
-  const S=256,oc=document.createElement('canvas');oc.width=oc.height=S;
-  const o=oc.getContext('2d');
-  o.fillStyle=bgColor;o.fillRect(0,0,S,S);
-  for(let x=0;x<S;x+=3){const a=(0.055+(Math.sin(x*1.4)*.5+.5)*.085).toFixed(3);o.strokeStyle=`rgba(${threadColor1},${a})`;o.lineWidth=x%6===0?1.4:.7;o.beginPath();o.moveTo(x,0);o.lineTo(x,S);o.stroke();}
-  for(let y=0;y<S;y+=3){const a=(0.038+(Math.sin(y*1.7)*.5+.5)*.06).toFixed(3);o.strokeStyle=`rgba(${threadColor2},${a})`;o.lineWidth=y%6===0?1.1:.55;o.beginPath();o.moveTo(0,y);o.lineTo(S,y);o.stroke();}
-  const id=o.getImageData(0,0,S,S),d=id.data;
-  for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*noiseRange;d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}
-  o.putImageData(id,0,0);
-  const sh2=o.createLinearGradient(0,0,S*.55,S*.55);sh2.addColorStop(0,'rgba(255,255,255,.11)');sh2.addColorStop(1,'rgba(255,255,255,0)');o.fillStyle=sh2;o.fillRect(0,0,S,S);
-  const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,oc);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
-  gl.generateMipmap(gl.TEXTURE_2D);return t;
-}
-const textures = [
-  mkFabric('#f4f3ef', '160,155,140', '130,125,110', 20), // Layer 0 fabric (Page 1)
-  mkFabric('#07050e', '175,155,255', '115,95,205', 30), // Layer 1 fabric (Page 2)
-  mkFabric('#0d001a', '255,180,50', '200,100,255', 36),  // Layer 2 fabric (Page 3)
-];
-
-// ── Physics ────────────────────────────────────────────────────
 const PCOLS=22,ROWS=28,GRAV=0.55,DAMP=0.975,ITERS=3,SAG=1.15;
 const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
 let L=[],R=[],LC=[],RC=[];
@@ -248,6 +196,35 @@ function build(){
   }
 }
 
+const PAGES = ['p1', 'p2', 'p3'];
+const clones = {};
+PAGES.forEach(id => {
+  const orig = document.getElementById(id);
+  if (!orig) return;
+  const left = orig.cloneNode(true); left.id = id + '-left'; left.classList.add('page-clone');
+  const right = orig.cloneNode(true); right.id = id + '-right'; right.classList.add('page-clone');
+  const center = orig.cloneNode(true); center.id = id + '-center'; center.classList.add('page-clone');
+  const z = window.getComputedStyle(orig).zIndex;
+  left.style.zIndex = right.style.zIndex = center.style.zIndex = z;
+  orig.parentNode.insertBefore(left, orig.nextSibling);
+  orig.parentNode.insertBefore(right, left.nextSibling);
+  orig.parentNode.insertBefore(center, right.nextSibling);
+  orig.style.display = 'none';
+  clones[id] = { left, right, center };
+});
+
+function updateCloneVisibility() {
+  PAGES.forEach((id, idx) => {
+    const c = clones[id];
+    if (c) {
+      if (idx < layer) { c.center.style.display = c.left.style.display = c.right.style.display = 'none'; }
+      else if (idx === layer) { c.center.style.display = 'flex'; c.left.style.display = c.right.style.display = (zipRow > 0) ? 'flex' : 'none'; }
+      else if (idx === layer + 1) { c.center.style.display = 'flex'; c.left.style.display = c.right.style.display = 'none'; c.center.style.clipPath = ''; }
+      else { c.center.style.display = c.left.style.display = c.right.style.display = 'none'; }
+    }
+  });
+}
+
 function updateHandleStyle(){
   if(layer<LAYERS.length){
     const t=THEMES[layer];
@@ -263,6 +240,7 @@ function reset(){
   zipRow=0;active=false;done=false;dragging=false;
   document.getElementById('zh').style.top='-22px';
   updateHandleStyle();
+  updateCloneVisibility();
   build();
 }
 
@@ -293,101 +271,44 @@ function tick(){
   if(zipRow>=ROWS-1&&!done){done=true;setTimeout(advance,350);}
 }
 
-// ── Advance to next layer ──────────────────────────────────────
 function advance(){
   if(layer>=LAYERS.length) return;
-  // Remove the peeled page from the stack entirely
-  const el=document.getElementById(LAYERS[layer].page);
-  el.style.display='none';
+  const activeId = LAYERS[layer].page;
+  if(clones[activeId]){clones[activeId].left.style.display=clones[activeId].right.style.display=clones[activeId].center.style.display='none';}
   layer++;
-  if(layer>=LAYERS.length){
-    document.getElementById('zh').classList.add('done');
-    document.getElementById('hint').style.opacity='0';
-  }
+  if(layer>=LAYERS.length){document.getElementById('zh').classList.add('done');document.getElementById('hint').style.opacity='0';}
   reset();
-}
-
-// ── Render ─────────────────────────────────────────────────────
-function mesh(getFn,flipU){
-  const pos=[],uvs=[],lights=[],idx=[],TX=5,TY=8;
-  for(let r=0;r<ROWS;r++)for(let c=0;c<PCOLS;c++){
-    const p=getFn(r,c);pos.push(p.x,p.y);
-    const u=(c/(PCOLS-1))*TX;uvs.push(flipU?TX-u:u,(r/(ROWS-1))*TY);
-    let lt=1;
-    if(r>0&&r<ROWS-1&&c>0&&c<PCOLS-1){
-      const up=getFn(r-1,c),dn=getFn(r+1,c),lf=getFn(r,c-1),rt=getFn(r,c+1);
-      const cz=(rt.x-lf.x)*(dn.y-up.y)-(rt.y-lf.y)*(dn.x-up.x);
-      // Back face: cz < 0, encode as 0.0..0.49
-      // Front face: cz > 0, encode as 0.5..1.5
-      lt=cz<0
-        ? Math.max(0.01, Math.min(0.49, 0.49+cz/(psx*sy*8)))
-        : Math.max(0.5,  Math.min(1.5,  0.5+cz/(psx*sy*4)));
-    }
-    lights.push(lt);
-  }
-  for(let r=0;r<Math.min(zipRow,ROWS-1);r++)for(let c=0;c<PCOLS-1;c++){const i=r*PCOLS+c;idx.push(i,i+1,i+PCOLS,i+1,i+PCOLS+1,i+PCOLS);}
-  return{pos,uvs,lights,idx};
-}
-
-function panel(getFn,flipU){
-  const{pos,uvs,lights,idx}=mesh(getFn,flipU);if(!idx.length)return;
-  gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pos),gl.DYNAMIC_DRAW);gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
-  gl.bindBuffer(gl.ARRAY_BUFFER,ub);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(uvs),gl.DYNAMIC_DRAW);gl.vertexAttribPointer(aUV,2,gl.FLOAT,false,0,0);
-  gl.bindBuffer(gl.ARRAY_BUFFER,lb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lights),gl.DYNAMIC_DRAW);gl.vertexAttribPointer(aLight,1,gl.FLOAT,false,0,0);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(idx),gl.DYNAMIC_DRAW);
-  gl.drawElements(gl.TRIANGLES,idx.length,gl.UNSIGNED_SHORT,0);
 }
 
 function teeth(){
   tctx.clearRect(0,0,W,H);if(!active||done)return;
   const tCol = THEMES[layer]?.teeth || '220,205,255';
   tctx.save();tctx.strokeStyle=`rgba(${THEMES[layer]?.line || '255,255,255'},.07)`;tctx.lineWidth=1;tctx.setLineDash([3,8]);
-  tctx.beginPath();tctx.moveTo(W/2,zipRow*sy);tctx.lineTo(W/2,H);tctx.stroke();tctx.setLineDash([]);tctx.restore();
-  for(let r=1;r<ROWS;r++){
-    const lpt=lp(r,PCOLS-1),rpt=rp(r,0);
-    if(r<zipRow){
-      tctx.fillStyle=`rgba(${tCol},.38)`;
-      tctx.beginPath();tctx.roundRect(lpt.x-7,lpt.y-3.5,7,7,1.5);tctx.fill();
-      tctx.beginPath();tctx.roundRect(rpt.x,rpt.y-3.5,7,7,1.5);tctx.fill();
-    }else{
-      const mx=(lpt.x+rpt.x)/2,my=(lpt.y+rpt.y)/2;
-      tctx.fillStyle=`rgba(${tCol},.9)`;
-      tctx.beginPath();tctx.roundRect(mx-9,my-3.5,7,7,1.5);tctx.fill();
-      tctx.beginPath();tctx.roundRect(mx+2,my-3.5,7,7,1.5);tctx.fill();
-    }
-  }
+  tctx.beginPath();tctx.moveTo(W/2,zipRow*sy);tctx.lineTo(W/2,H);tctx.stroke();tctx.restore();
 }
 
-function draw(){
-  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-  if(active&&!done&&zipRow>0){
-    gl.bindTexture(gl.TEXTURE_2D,textures[layer]);gl.uniform1i(uTex,0);
-    panel(lp,false);panel(rp,true);
-  }
-  teeth();
-}
+function draw(){ teeth(); }
 
-// ── The key: clip the TOP page to only show rows >= zipRow ─────
-// This makes the page appear to peel away without any z-index tricks
 function maskTopPage(){
   const id=LAYERS[layer]?.page; if(!id) return;
-  const el=document.getElementById(id);
-  if(!active||zipRow<=0){
-    el.style.clipPath=''; return;
-  }
-  // Clip p1 to only the still-zipped bottom portion
+  const activeClones = clones[id];
+  if(!activeClones) return;
+  const { left, right, center } = activeClones;
+  if(!active||zipRow<=0){ center.style.clipPath=''; center.style.transform=''; left.style.display=right.style.display='none'; return; }
+  left.style.display = right.style.display = 'flex';
   const openH=Math.round(zipRow*sy);
-  el.style.clipPath=`polygon(0 ${openH}px, 100% ${openH}px, 100% 100%, 0 100%)`;
+  center.style.clipPath = `polygon(0 ${openH}px, 100% ${openH}px, 100% 100%, 0 100%)`;
+  left.style.clipPath = `polygon(0 0, 50% 0, 50% ${openH}px, 0 ${openH}px)`;
+  left.style.transformOrigin = `50% ${openH}px`;
+  const progress = zipRow / ROWS;
+  const peelX = 14 + progress * 26, angle = 2.5 + progress * 6.5;
+  left.style.transform = `translate3d(-${peelX}px, 0, 0) rotateZ(-${angle}deg)`;
+  right.style.clipPath = `polygon(50% 0, 100% 0, 100% ${openH}px, 50% ${openH}px)`;
+  right.style.transformOrigin = `50% ${openH}px`;
+  right.style.transform = `translate3d(${peelX}px, 0, 0) rotateZ(${angle}deg)`;
 }
 
-// ── Input ──────────────────────────────────────────────────────
-const zh=document.getElementById('zh');
-
-function dragStart(){
-  if(done||layer>=LAYERS.length)return;
-  active=true;dragging=true;
-}
-
+function dragStart(){ if(done||layer>=LAYERS.length)return; active=true;dragging=true; }
 function dragMove(y){
   if(!dragging||done)return;
   const newRow=Math.max(0,Math.min(ROWS,Math.round(y/sy)));
@@ -403,7 +324,15 @@ window.addEventListener('touchend',()=>dragging=false);
 window.addEventListener('mousemove',e=>{if(dragging)dragMove(e.clientY);});
 window.addEventListener('touchmove',e=>{if(dragging)dragMove(e.touches[0].clientY);},{passive:false});
 
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btnp, .btns, .navcta');
+  if (btn) alert(`Success: Cloned Element "${btn.textContent.trim()}" clicked!`);
+  const link = e.target.closest('.navlinks a');
+  if (link) alert(`Success: Cloned Link "${link.textContent.trim()}" clicked!`);
+});
+
 build();
+updateCloneVisibility();
 requestAnimationFrame(function loop(){tick();maskTopPage();draw();requestAnimationFrame(loop);});
 </script>
 </body>
