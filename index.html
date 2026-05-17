@@ -201,9 +201,9 @@ const clones = {};
 PAGES.forEach(id => {
   const orig = document.getElementById(id);
   if (!orig) return;
-  const left = orig.cloneNode(true); left.id = id + '-left'; left.classList.add('page-clone');
-  const right = orig.cloneNode(true); right.id = id + '-right'; right.classList.add('page-clone');
-  const center = orig.cloneNode(true); center.id = id + '-center'; center.classList.add('page-clone');
+  const left = orig.cloneNode(true); left.id = id; left.classList.add('page-clone');
+  const right = orig.cloneNode(true); right.id = id; right.classList.add('page-clone');
+  const center = orig.cloneNode(true); center.id = id; center.classList.add('page-clone');
   const z = window.getComputedStyle(orig).zIndex;
   left.style.zIndex = right.style.zIndex = center.style.zIndex = z;
   orig.parentNode.insertBefore(left, orig.nextSibling);
