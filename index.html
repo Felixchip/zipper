@@ -164,8 +164,13 @@ const LAYERS=[
 const THEMES=[
   {fill:'#1c1b18', stroke:'rgba(0,0,0,.15)',       line:'0,0,0',       teeth:'80,75,70'},
   {fill:'#0a0618', stroke:'rgba(160,140,255,.4)',  line:'200,185,255', teeth:'170,145,255'},
-  {fill:'#0a0020', stroke:'rgba(255,200,80,.4)',   line:'255,220,100', teeth:'255,200,80'},const cv=document.getElementById('cv');
+  {fill:'#0a0020', stroke:'rgba(255,200,80,.4)',   line:'255,220,100', teeth:'255,200,80'},
+];
+let layer=0;
+
+const cv=document.getElementById('cv');
 const tc=document.getElementById('tc');
+const zh=document.getElementById('zh');
 cv.width=tc.width=W; cv.height=tc.height=H;
 const tctx=tc.getContext('2d');
 
