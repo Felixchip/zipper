@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zipper — Felix Obinna</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-serif;}
+
+/* All pages stacked, always rendered, never hidden */
+#stack{position:fixed;inset:0;}
+.page{position:absolute;inset:0;display:flex;flex-direction:column;}
+
+/* Z-order: p4 at bottom, p1 on top */
+#p4{z-index:1;}
+#p3{z-index:2;}
+#p2{z-index:3;}
+#p1{z-index:4;}
+
+/* Page 1 — light */
+#p1{background:#f4f3ef;}
+#p1 nav{display:flex;justify-content:space-between;align-items:center;padding:0 40px;height:60px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;}
+.logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#111;}
+.navlinks{display:flex;gap:28px;}
+.navlinks a{font-size:13px;color:#666;cursor:pointer;text-decoration:none;}
+.navcta{padding:9px 20px;border-radius:7px;background:#111;color:#fff;font-size:13px;font-weight:500;cursor:pointer;border:none;}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:0 60px;text-align:center;}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;}
+#p1 .eyebrow{color:#999;}
+#p1 h1{font-size:clamp(32px,5vw,58px);font-weight:700;line-height:1.08;max-width:640px;color:#0d0d0d;}
+#p1 h1 em{font-style:italic;color:#5b4aff;}
+#p1 .sub{font-size:16px;color:#666;max-width:420px;line-height:1.6;}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.btnp{padding:13px 28px;border-radius:9px;background:#0d0d0d;color:#fff;font-size:14px;font-weight:600;cursor:pointer;border:none;}
+.btns{padding:13px 28px;border-radius:9px;border:1.5px solid #d0d0d0;color:#333;font-size:14px;cursor:pointer;background:none;}
+
+/* Page 2 — dark */
+#p2{background:#07050e;}
+#p2 .eyebrow{color:#5eead4;}
+#p2 h1{font-size:clamp(30px,5vw,52px);font-weight:700;color:#f0eeff;line-height:1.1;max-width:580px;text-shadow:0 0 40px rgba(100,80,255,.35);}
+#p2 .sub{font-size:16px;color:rgba(180,170,220,.8);max-width:420px;line-height:1.6;}
+#p2 .btnp{background:linear-gradient(135deg,#7c5cff,#4a2ecc);box-shadow:0 4px 24px rgba(100,80,255,.3);}
+#p2 .btns{border-color:rgba(255,255,255,.15);color:rgba(200,185,255,.65);}
+
+/* Page 3 — vibrant */
+#p3{background:#0d001a;}
+#p3::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 30%,rgba(200,100,255,.22) 0%,transparent 60%),
+             radial-gradient(ellipse at 15% 70%,rgba(255,180,50,.18) 0%,transparent 50%),
+             radial-gradient(ellipse at 85% 75%,rgba(50,200,255,.14) 0%,transparent 50%);}
+#p3 .hero{position:relative;}
+#p3 .eyebrow{color:rgba(255,200,80,.85);}
+#p3 h1{font-size:clamp(30px,5vw,52px);font-weight:700;line-height:1.1;max-width:580px;
+  background:linear-gradient(90deg,#ffcc44,#cc88ff,#44ccff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 20px rgba(200,100,255,.3));}
+#p3 .sub{font-size:16px;color:rgba(220,200,255,.7);max-width:420px;line-height:1.6;}
+#p3 .btnp{background:linear-gradient(90deg,#ffaa33,#cc44ff);border:none;border-radius:22px;}
+
+/* Page 4 — Felix */
+#p4{background:#000;}
+#p4 .hero{gap:18px;}
+.ava{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#ff6b6b);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;box-shadow:0 0 50px rgba(124,92,255,.4);}
+.fname{font-size:36px;font-weight:600;color:#f0f0f0;letter-spacing:-.02em;}
+.frole{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:.12em;text-transform:uppercase;}
+.fhr{width:36px;border:none;border-top:1px solid rgba(255,255,255,.1);}
+.fnote{font-size:13px;color:rgba(255,255,255,.2);max-width:280px;line-height:1.65;text-align:center;}
+.flink{font-size:13px;color:rgba(124,92,255,.7);text-decoration:none;border-bottom:1px solid rgba(124,92,255,.25);padding-bottom:1px;}
+
+/* Cloth canvas — on top of everything, pointer-events:none so pages stay interactive */
+#cv,#tc{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
+#cv{z-index:10;}
+#tc{z-index:11;}
+
+/* Zipper handle */
+#zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
+#zh.done{opacity:0;pointer-events:none;}
+#hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);z-index:20;pointer-events:none;letter-spacing:.1em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<div id="stack">
+  <!-- All 4 pages always in DOM, always rendered, stacked by z-index -->
+  <div class="page" id="p4">
+    <div class="hero">
+      <div class="ava">FO</div>
+      <div class="fname">Felix Obinna</div>
+      <div class="frole">Product &amp; Business Designer</div>
+      <hr class="fhr">
+      <div class="fnote">Built with Verlet cloth simulation, WebGL texture mapping, and a bit of obsession.</div>
+      <a class="flink" href="https://felixobinna.com" target="_blank">felixobinna.com</a>
+    </div>
+  </div>
+
+  <div class="page" id="p3">
+    <div class="hero">
+      <div class="eyebrow">The Final Layer</div>
+      <h1>Where ideas become reality</h1>
+      <div class="sub">One more pull reveals who made this.</div>
+      <div class="row"><button class="btnp" style="color:#fff;">Keep going ↓</button></div>
+    </div>
+  </div>
+
+  <div class="page" id="p2">
+    <div class="hero">
+      <div class="eyebrow">Built for teams that ship</div>
+      <h1>Zero-config CI/CD for modern teams</h1>
+      <div class="sub">Catch regressions before users do. Automated. Continuous. Instant.</div>
+      <div class="row">
+        <button class="btnp">Start free trial</button>
+        <button class="btns" style="border-color:rgba(255,255,255,.15);color:rgba(200,185,255,.65);">See how it works →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="p1">
+    <nav>
+      <div class="logo">MERIDIAN</div>
+      <div class="navlinks"><a>Product</a><a>Pricing</a><a>Docs</a><a>Blog</a></div>
+      <button class="navcta">Sign up free</button>
+    </nav>
+    <div class="hero">
+      <div class="eyebrow">Introducing v2.0</div>
+      <h1>Design that <em>moves</em> at the speed of thought</h1>
+      <div class="sub">The collaborative canvas where your whole team ships production-ready interfaces — no handoffs, no bottlenecks.</div>
+      <div class="row">
+        <button class="btnp">Start for free</button>
+        <button class="btns">Watch the demo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cloth sits above all pages, passes pointer events through -->
+<canvas id="cv"></canvas>
+<canvas id="tc"></canvas>
+
+<svg id="zh" width="44" height="44" viewBox="0 0 44 44">
+  <rect id="zr" x="3" y="3" width="38" height="38" rx="9" fill="#111" stroke="rgba(255,255,255,.28)" stroke-width="1.5"/>
+  <line id="zl1" x1="12" y1="15" x2="32" y2="15" stroke="rgba(255,255,255,.88)" stroke-width="2.5" stroke-linecap="round"/>
+  <line id="zl2" x1="12" y1="22" x2="32" y2="22" stroke="rgba(255,255,255,.5)"  stroke-width="2.5" stroke-linecap="round"/>
+  <line id="zl3" x1="12" y1="29" x2="32" y2="29" stroke="rgba(255,255,255,.25)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
+<div id="hint">Pull down to reveal</div>
+
+<script>
+const W=window.innerWidth, H=window.innerHeight;
+
+// Pages in peel order — p1 is on top (z:4), p4 at bottom (z:1)
+// Peeling p1 reveals p2, peeling p2 reveals p3, peeling p3 reveals p4
+const LAYERS=[
+  {page:'p1', nextZ:3}, // peel p1 → reveals p2 (z:3)
+  {page:'p2', nextZ:2}, // peel p2 → reveals p3 (z:2)
+  {page:'p3', nextZ:1}, // peel p3 → reveals p4 (z:1)
+];
+const THEMES=[
+  {fill:'#111',    stroke:'rgba(255,255,255,.28)', line:'255,255,255'},
+  {fill:'#0a0618', stroke:'rgba(160,140,255,.4)',  line:'200,185,255'},
+  {fill:'#0a0020', stroke:'rgba(255,200,80,.4)',   line:'255,220,100'},
+];
+let layer=0; // which layer we're currently peeling
+
+// ── WebGL ──────────────────────────────────────────────────────
+const cv=document.getElementById('cv');
+const tc=document.getElementById('tc');
+cv.width=tc.width=W; cv.height=tc.height=H;
+const tctx=tc.getContext('2d');
+
+const VS=`attribute vec2 aPos;attribute vec2 aUV;attribute float aLight;
+varying vec2 vUV;varying float vLight;uniform vec2 uRes;
+void main(){vec2 c=(aPos/uRes)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0,1);vUV=aUV;vLight=aLight;}`;
+const FS=`precision mediump float;
+varying vec2 vUV;varying float vLight;uniform sampler2D uTex;
+void main(){
+  vec4 c=texture2D(uTex,vUV);
+  // vLight < 0.5 signals a back face — render as dark opaque cloth interior
+  if(vLight < 0.5){
+    // Back of fabric: dark with slight warm undertone, fully opaque
+    float b=vLight*2.0; // 0..1 range for back faces
+    gl_FragColor=vec4(0.08*b, 0.07*b, 0.12*b, 1.0);
+  } else {
+    gl_FragColor=vec4(c.rgb*vLight,1.0);
+  }
+}`;
+const gl=cv.getContext('webgl',{antialias:true,alpha:true});
+function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x;}
+const prog=gl.createProgram();
+gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));
+gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
+gl.linkProgram(prog);gl.useProgram(prog);
+gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+gl.viewport(0,0,W,H);
+gl.uniform2f(gl.getUniformLocation(prog,'uRes'),W,H);
+const aPos=gl.getAttribLocation(prog,'aPos');
+const aUV=gl.getAttribLocation(prog,'aUV');
+const aLight=gl.getAttribLocation(prog,'aLight');
+const uTex=gl.getUniformLocation(prog,'uTex');
+gl.enableVertexAttribArray(aPos);gl.enableVertexAttribArray(aUV);gl.enableVertexAttribArray(aLight);
+const pb=gl.createBuffer(),ub=gl.createBuffer(),lb=gl.createBuffer(),ib=gl.createBuffer();
+
+// ── Fabric texture ─────────────────────────────────────────────
+function mkFabric(){
+  const S=256,oc=document.createElement('canvas');oc.width=oc.height=S;
+  const o=oc.getContext('2d');
+  o.fillStyle='#111020';o.fillRect(0,0,S,S);
+  for(let x=0;x<S;x+=3){const a=(0.055+(Math.sin(x*1.4)*.5+.5)*.085).toFixed(3);o.strokeStyle=`rgba(175,155,255,${a})`;o.lineWidth=x%6===0?1.4:.7;o.beginPath();o.moveTo(x,0);o.lineTo(x,S);o.stroke();}
+  for(let y=0;y<S;y+=3){const a=(0.038+(Math.sin(y*1.7)*.5+.5)*.06).toFixed(3);o.strokeStyle=`rgba(115,95,205,${a})`;o.lineWidth=y%6===0?1.1:.55;o.beginPath();o.moveTo(0,y);o.lineTo(S,y);o.stroke();}
+  const id=o.getImageData(0,0,S,S),d=id.data;
+  for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*46;d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}
+  o.putImageData(id,0,0);
+  const sh2=o.createLinearGradient(0,0,S*.55,S*.55);sh2.addColorStop(0,'rgba(255,255,255,.11)');sh2.addColorStop(1,'rgba(255,255,255,0)');o.fillStyle=sh2;o.fillRect(0,0,S,S);
+  const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,oc);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+  gl.generateMipmap(gl.TEXTURE_2D);return t;
+}
+const fab=mkFabric();
+
+// ── Physics ────────────────────────────────────────────────────
+const PCOLS=22,ROWS=28,GRAV=0.55,DAMP=0.975,ITERS=3,SAG=1.15;
+const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
+let L=[],R=[],LC=[],RC=[];
+let zipRow=0,dragging=false,active=false,done=false;
+
+const lp=(r,c)=>L[r*PCOLS+c];
+const rp=(r,c)=>R[r*PCOLS+c];
+const par=(x,y)=>({x,y,px:x,py:y,freed:false});
+const con=(a,b,s,sg)=>{const dx=b.x-a.x,dy=b.y-a.y;return{a,b,rest:Math.sqrt(dx*dx+dy*dy)*(sg||1),s:s||1};};
+
+function build(){
+  L=[];R=[];LC=[];RC=[];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<PCOLS;c++){L.push(par(c*psx,r*sy));R.push(par(half+c*psx,r*sy));}
+  for(let r=0;r<ROWS;r++)for(let c=0;c<PCOLS;c++){
+    if(c<PCOLS-1){LC.push(con(lp(r,c),lp(r,c+1),1));RC.push(con(rp(r,c),rp(r,c+1),1));}
+    if(r<ROWS-1){LC.push(con(lp(r,c),lp(r+1,c),.88,SAG));RC.push(con(rp(r,c),rp(r+1,c),.88,SAG));}
+    if(r<ROWS-1&&c<PCOLS-1){
+      LC.push(con(lp(r,c),lp(r+1,c+1),.4));LC.push(con(lp(r,c+1),lp(r+1,c),.4));
+      RC.push(con(rp(r,c),rp(r+1,c+1),.4));RC.push(con(rp(r,c+1),rp(r+1,c),.4));
+    }
+  }
+}
+
+function reset(){
+  zipRow=0;active=false;done=false;dragging=false;
+  document.getElementById('zh').style.top='-22px';
+  build();
+}
+
+function kick(from,to){
+  for(let r=from;r<to&&r<ROWS;r++)for(let c=0;c<PCOLS;c++){
+    const lpt=lp(r,c),rpt=rp(r,c);
+    if(!lpt.freed){lpt.freed=rpt.freed=true;const f=c/(PCOLS-1);lpt.px=lpt.x+f*14;rpt.px=rpt.x-(1-f)*14;lpt.py=lpt.y-2;rpt.py=rpt.y-2;}
+  }
+}
+
+function snapClosed(){
+  for(let r=zipRow;r<ROWS;r++)for(let c=0;c<PCOLS;c++){
+    const lpt=lp(r,c),rpt=rp(r,c);
+    lpt.x=c*psx;lpt.y=r*sy;lpt.px=lpt.x;lpt.py=lpt.y;lpt.freed=false;
+    rpt.x=half+c*psx;rpt.y=r*sy;rpt.px=rpt.x;rpt.py=rpt.y;rpt.freed=false;
+  }
+}
+
+function relax(cs){
+  for(const c of cs){const dx=c.b.x-c.a.x,dy=c.b.y-c.a.y;const d=Math.sqrt(dx*dx+dy*dy)||.001;const f=(d-c.rest)/d*.5*c.s;c.a.x+=dx*f;c.a.y+=dy*f;c.b.x-=dx*f;c.b.y-=dy*f;}
+}
+
+function tick(){
+  if(!active||done)return;
+  for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+GRAV;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
+  for(let i=0;i<ITERS;i++){relax(LC);relax(RC);}
+  snapClosed();
+  if(zipRow>=ROWS-1&&!done){done=true;setTimeout(advance,350);}
+}
+
+// ── Advance to next layer ──────────────────────────────────────
+function advance(){
+  if(layer>=LAYERS.length) return;
+  // Remove the peeled page from the stack entirely
+  const el=document.getElementById(LAYERS[layer].page);
+  el.style.display='none';
+  layer++;
+  // Style handle for next layer
+  if(layer<LAYERS.length){
+    const t=THEMES[layer];
+    document.getElementById('zr').setAttribute('fill',t.fill);
+    document.getElementById('zr').setAttribute('stroke',t.stroke);
+    [['zl1','.88'],['zl2','.5'],['zl3','.25']].forEach(([id,a])=>{
+      document.getElementById(id).setAttribute('stroke',`rgba(${t.line},${a})`);
+    });
+  } else {
+    document.getElementById('zh').classList.add('done');
+    document.getElementById('hint').style.opacity='0';
+  }
+  reset();
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function mesh(getFn,flipU){
+  const pos=[],uvs=[],lights=[],idx=[],TX=5,TY=8;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<PCOLS;c++){
+    const p=getFn(r,c);pos.push(p.x,p.y);
+    const u=(c/(PCOLS-1))*TX;uvs.push(flipU?TX-u:u,(r/(ROWS-1))*TY);
+    let lt=1;
+    if(r>0&&r<ROWS-1&&c>0&&c<PCOLS-1){
+      const up=getFn(r-1,c),dn=getFn(r+1,c),lf=getFn(r,c-1),rt=getFn(r,c+1);
+      const cz=(rt.x-lf.x)*(dn.y-up.y)-(rt.y-lf.y)*(dn.x-up.x);
+      // Back face: cz < 0, encode as 0.0..0.49
+      // Front face: cz > 0, encode as 0.5..1.5
+      lt=cz<0
+        ? Math.max(0.01, Math.min(0.49, 0.49+cz/(psx*sy*8)))
+        : Math.max(0.5,  Math.min(1.5,  0.5+cz/(psx*sy*4)));
+    }
+    lights.push(lt);
+  }
+  for(let r=0;r<Math.min(zipRow,ROWS-1);r++)for(let c=0;c<PCOLS-1;c++){const i=r*PCOLS+c;idx.push(i,i+1,i+PCOLS,i+1,i+PCOLS+1,i+PCOLS);}
+  return{pos,uvs,lights,idx};
+}
+
+function panel(getFn,flipU){
+  const{pos,uvs,lights,idx}=mesh(getFn,flipU);if(!idx.length)return;
+  gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pos),gl.DYNAMIC_DRAW);gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,ub);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(uvs),gl.DYNAMIC_DRAW);gl.vertexAttribPointer(aUV,2,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,lb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lights),gl.DYNAMIC_DRAW);gl.vertexAttribPointer(aLight,1,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(idx),gl.DYNAMIC_DRAW);
+  gl.drawElements(gl.TRIANGLES,idx.length,gl.UNSIGNED_SHORT,0);
+}
+
+function teeth(){
+  tctx.clearRect(0,0,W,H);if(!active||done)return;
+  tctx.save();tctx.strokeStyle='rgba(255,255,255,.07)';tctx.lineWidth=1;tctx.setLineDash([3,8]);
+  tctx.beginPath();tctx.moveTo(W/2,zipRow*sy);tctx.lineTo(W/2,H);tctx.stroke();tctx.setLineDash([]);tctx.restore();
+  for(let r=1;r<ROWS;r++){
+    const lpt=lp(r,PCOLS-1),rpt=rp(r,0);
+    if(r<zipRow){
+      tctx.fillStyle='rgba(220,205,255,.38)';
+      tctx.beginPath();tctx.roundRect(lpt.x-7,lpt.y-3.5,7,7,1.5);tctx.fill();
+      tctx.beginPath();tctx.roundRect(rpt.x,rpt.y-3.5,7,7,1.5);tctx.fill();
+    }else{
+      const mx=(lpt.x+rpt.x)/2,my=(lpt.y+rpt.y)/2;
+      tctx.fillStyle='rgba(220,205,255,.9)';
+      tctx.beginPath();tctx.roundRect(mx-9,my-3.5,7,7,1.5);tctx.fill();
+      tctx.beginPath();tctx.roundRect(mx+2,my-3.5,7,7,1.5);tctx.fill();
+    }
+  }
+}
+
+function draw(){
+  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  if(active&&!done&&zipRow>0){
+    gl.bindTexture(gl.TEXTURE_2D,fab);gl.uniform1i(uTex,0);
+    panel(lp,false);panel(rp,true);
+  }
+  teeth();
+}
+
+// ── The key: clip the TOP page to only show rows >= zipRow ─────
+// This makes the page appear to peel away without any z-index tricks
+function maskTopPage(){
+  const id=LAYERS[layer]?.page; if(!id) return;
+  const el=document.getElementById(id);
+  if(!active||zipRow<=0){
+    el.style.clipPath=''; return;
+  }
+  // Clip p1 to only the still-zipped bottom portion
+  const openH=Math.round(zipRow*sy);
+  el.style.clipPath=`polygon(0 ${openH}px, 100% ${openH}px, 100% 100%, 0 100%)`;
+}
+
+// ── Input ──────────────────────────────────────────────────────
+const zh=document.getElementById('zh');
+
+function dragStart(){
+  if(done||layer>=LAYERS.length)return;
+  active=true;dragging=true;
+}
+
+function dragMove(y){
+  if(!dragging||done)return;
+  const newRow=Math.max(0,Math.min(ROWS,Math.round(y/sy)));
+  if(newRow>zipRow)kick(zipRow,newRow);
+  zipRow=newRow;
+  zh.style.top=Math.max(-22,zipRow*sy-22)+'px';
+}
+
+zh.addEventListener('mousedown',e=>{dragStart();e.preventDefault();});
+zh.addEventListener('touchstart',e=>{dragStart();e.preventDefault();},{passive:false});
+window.addEventListener('mouseup',()=>dragging=false);
+window.addEventListener('touchend',()=>dragging=false);
+window.addEventListener('mousemove',e=>{if(dragging)dragMove(e.clientY);});
+window.addEventListener('touchmove',e=>{if(dragging)dragMove(e.touches[0].clientY);},{passive:false});
+
+build();
+requestAnimationFrame(function loop(){tick();maskTopPage();draw();requestAnimationFrame(loop);});
+</script>
+</body>
+</html>
