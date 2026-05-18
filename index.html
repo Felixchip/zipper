@@ -60,16 +60,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 /* Page 4 — Felix */
 #p4{background:#000;}
 #p4 .hero{gap:18px;}
-.ava{width:100%;height:48px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 30px rgba(124,92,255,.35));}
-.ava img{height:100%;width:auto;object-fit:contain;}
-.fname{font-size:36px;font-weight:600;color:#f0f0f0;letter-spacing:-.02em;}
-.frole{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:.12em;text-transform:uppercase;}
-.fhr{width:36px;border:none;border-top:1px solid rgba(255,255,255,.1);}
-.fnote{font-size:13px;color:rgba(255,255,255,.2);max-width:280px;line-height:1.65;text-align:center;}
-.flinks{display:flex;gap:16px;align-items:center;justify-content:center;margin-top:8px;}
-.flink{font-size:13px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:1px;transition:opacity 0.2s;}
+.flogo{height:76px;width:auto;object-fit:contain;filter:drop-shadow(0 0 30px rgba(124,92,255,.35));display:block;margin:0 auto 4px auto;}
+.frole{font-size:12px;color:rgba(255,255,255,.6);letter-spacing:.12em;text-transform:uppercase;}
+.fhr{width:36px;border:none;border-top:1px solid rgba(255,255,255,.15);}
+.fnote{font-size:13px;color:rgba(255,255,255,.45);max-width:280px;line-height:1.65;text-align:center;}
+.flink{font-size:13px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:1px;transition:opacity 0.2s;display:inline-block;}
 .flink:hover{opacity:0.8;}
-.fsep{color:rgba(255,255,255,.25);font-size:13px;}
+.fsocials{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:2px;}
+.fsep{color:rgba(255,255,255,.3);font-size:13px;}
 
 
 /* Canvases — above pages, pointer-events passthrough */
@@ -88,14 +86,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 <div id="stack">
   <div class="page" id="p4">
     <div class="hero">
-      <div class="ava"><img src="https://felixobinna.com/logo.png" alt="Felix Obinna"></div>
-      <div class="fname">Felix Obinna</div>
+      <img class="flogo" src="https://felixobinna.com/logo.png" alt="Felix Obinna">
       <div class="frole">Product &amp; Business Designer</div>
       <hr class="fhr">
       <div class="fnote">Built with Verlet cloth simulation, WebGL texture mapping, and a bit of obsession.</div>
-      <div class="flinks">
-        <a class="flink" href="https://felixobinna.com" target="_blank">felixobinna.com</a>
-        <span class="fsep">•</span>
+      <a class="flink" href="https://felixobinna.com" target="_blank">felixobinna.com</a>
+      <div class="fsocials">
         <a class="flink" href="https://x.com/misterxchip" target="_blank">Twitter</a>
         <span class="fsep">•</span>
         <a class="flink" href="https://linkedin.com/in/felixchip" target="_blank">LinkedIn</a>
