@@ -400,7 +400,14 @@ function reset(){
 function kick(from,to){
   for(let r=from;r<to&&r<ROWS;r++)for(let c=0;c<PCOLS;c++){
     const lpt=lp(r,c),rpt=rp(r,c);
-    if(!lpt.freed){lpt.freed=rpt.freed=true;const f=c/(PCOLS-1);lpt.px=lpt.x+f*14;rpt.px=rpt.x-(1-f)*14;lpt.py=lpt.y-2;rpt.py=rpt.y-2;}
+    if(!lpt.freed){
+      lpt.freed=rpt.freed=true;
+      const f=c/(PCOLS-1);
+      lpt.px=lpt.x-f*35;       // Kick outward to the left
+      rpt.px=rpt.x+(1-f)*35;   // Kick outward to the right
+      lpt.py=lpt.y-3;
+      rpt.py=rpt.y-3;
+    }
   }
 }
 
@@ -410,6 +417,12 @@ function snapClosed(){
     lpt.x=c*psx;lpt.y=r*sy;lpt.px=lpt.x;lpt.py=lpt.y;lpt.freed=false;
     rpt.x=half+c*psx;rpt.y=r*sy;rpt.px=rpt.x;rpt.py=rpt.y;rpt.freed=false;
   }
+  // Pin the top edge (row 0) during unzipping so it hangs beautifully instead of tucking in
+  for(let c=0;c<PCOLS;c++){
+    const lpt=lp(0,c),rpt=rp(0,c);
+    lpt.x=c*psx;lpt.y=0;lpt.px=lpt.x;lpt.py=lpt.y;
+    rpt.x=half+c*psx;rpt.y=0;rpt.px=rpt.x;rpt.py=rpt.y;
+  }
 }
 
 function relax(cs){
@@ -418,7 +431,24 @@ function relax(cs){
 
 function tick(){
   if(!active||done)return;
-  for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+GRAV;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
+  for(const p of L){
+    const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;
+    p.px=p.x;p.py=p.y;
+    p.x+=vx;p.y+=vy+GRAV;
+    if(p.freed && !falling) p.x -= 0.28; // Continuous outward force for left panel
+    if(p.y>H+900){p.y=H+900;p.py=p.y;}
+    if(p.x<-W*2)p.x=-W*2;
+    if(p.x>W*3)p.x=W*3;
+  }
+  for(const p of R){
+    const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;
+    p.px=p.x;p.py=p.y;
+    p.x+=vx;p.y+=vy+GRAV;
+    if(p.freed && !falling) p.x += 0.28; // Continuous outward force for right panel
+    if(p.y>H+900){p.y=H+900;p.py=p.y;}
+    if(p.x<-W*2)p.x=-W*2;
+    if(p.x>W*3)p.x=W*3;
+  }
   for(let i=0;i<ITERS;i++){relax(LC);relax(RC);}
   // Pin grabbed particle to mouse position
   if(clothGrab){clothGrab.x=clothGrabX;clothGrab.y=clothGrabY;}
