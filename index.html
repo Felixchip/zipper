@@ -75,10 +75,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   transition: font-size 0.05s ease-out;
 }
 #p2 .controls{
-  display:flex;gap:40px;margin-top:24px;padding:24px 36px;
-  background:rgba(15,22,35,0.65);border:1px solid rgba(80,255,220,0.1);
+  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+  display:flex;gap:40px;padding:16px 28px;
+  background:rgba(10,10,10,0.75);border:1px solid rgba(255,255,255,0.1);
   border-radius:20px;
-  box-shadow:0 0 20px rgba(80,255,220,0.05);
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  z-index:15;
+  pointer-events:auto;
 }
 #p2 .slider-group{display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
 #p2 .slider-group label{font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,.5);font-weight:600;}
@@ -273,14 +278,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
     </nav>
     <div class="hero">
       <h1>interactive<br>dynamic typography</h1>
-      <div class="controls">
-        <div class="slider-group">
-          <label>Text Size</label>
-          <div class="custom-slider" id="text-size-slider">
-            <div class="slider-track"></div>
-            <div class="slider-fill" style="width: 33.3%;"></div>
-            <div class="slider-thumb" style="left: 33.3%;"></div>
-          </div>
+    </div>
+    <div class="controls" data-html2canvas-ignore="true">
+      <div class="slider-group">
+        <label>Text Size</label>
+        <div class="custom-slider" id="text-size-slider">
+          <div class="slider-track"></div>
+          <div class="slider-fill" style="width: 33.3%;"></div>
+          <div class="slider-thumb" style="left: 33.3%;"></div>
         </div>
       </div>
     </div>
@@ -724,14 +729,9 @@ function initAuroraShader() {
     uniform vec2 u_mouse;
 
     #define PI 3.14159265359
-    #define NUM_BG_STARS 120
 
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-    }
-
-    float hash1(float n) {
-      return fract(sin(n) * 43758.5453123);
     }
 
     float noise(vec2 p) {
@@ -749,9 +749,7 @@ function initAuroraShader() {
       float centerX = ribbonX + sin(t * 0.15 + phase) * 0.25;
       float wave1 = sin(uv.y * waveFreq + t * 0.9 + phase) * waveAmp;
       float wave2 = sin(uv.y * waveFreq * 2.3 + t * 1.3 + phase * 1.7) * waveAmp * 0.5;
-      float wave3 = sin(uv.y * waveFreq * 0.4 + t * 0.35 + phase * 0.6) * waveAmp * 1.2;
-      float wave4 = sin(uv.y * waveFreq * 3.7 + t * 1.8 + phase * 2.3) * waveAmp * 0.2;
-      float waveOffset = wave1 + wave2 + wave3 + wave4;
+      float waveOffset = wave1 + wave2;
       float dx = uv.x - (centerX + waveOffset);
       float ribbon = exp(-dx * dx / (ribbonWidth * ribbonWidth));
       float brightBand = 0.5 + 0.5 * sin(uv.y * 2.5 + t * 0.7 + phase * 2.0);
@@ -765,26 +763,13 @@ function initAuroraShader() {
     }
 
     float bgStars(vec2 uv, float t) {
-      float stars = 0.0;
-      for (int i = 0; i < NUM_BG_STARS; i++) {
-        float fi = float(i);
-        vec2 pos = vec2(
-          hash1(fi * 17.31 + 100.0) * 2.8 - 1.4,
-          hash1(fi * 11.97 + 200.0) * 1.4 - 0.3
-        );
-        float d = length(uv - pos);
-        float twinkleSpeed = 0.5 + hash1(fi * 3.3 + 300.0) * 2.0;
-        float twinkle = 0.3 + 0.7 * sin(t * twinkleSpeed + fi * 2.7);
-        twinkle = max(twinkle, 0.0);
-        twinkle *= twinkle;
-        float size = 0.0008 + hash1(fi * 5.5 + 400.0) * 0.002;
-        float brightness = 0.4 + hash1(fi * 7.7 + 500.0) * 0.6;
-        stars += smoothstep(size, 0.0, d) * twinkle * brightness;
-        if (brightness > 0.7) {
-          stars += smoothstep(size * 5.0, 0.0, d) * twinkle * 0.08;
-        }
-      }
-      return stars;
+      vec2 gv = fract(uv * 70.0) - 0.5;
+      vec2 id = floor(uv * 70.0);
+      float h = hash(id);
+      float twinkle = sin(t * (1.2 + h * 2.0) + h * 6.28) * 0.5 + 0.5;
+      float size = 0.08 * h;
+      float star = smoothstep(size, 0.0, length(gv));
+      return star * twinkle * step(0.96, h);
     }
 
     float hexDist(vec2 p) {
@@ -854,55 +839,22 @@ function initAuroraShader() {
       );
       r3color = mix(r3color, vec3(0.40, 0.20, 0.70), smoothstep(0.1, -0.1, uv.y) * 0.3);
 
-      float r4 = auroraRibbon(uv, t * 0.6, 0.15, 0.30, 1.8, 0.35, 1.0);
-      vec3 r4color = mix(
-        vec3(0.65, 0.10, 0.45),
-        vec3(0.50, 0.05, 0.55),
-        0.5 + 0.5 * sin(uv.y * 2.0 + t * 0.15)
-      );
+      float i1 = r1 * 1.5 * u_auroraIntensity;
+      float i2 = r2 * 1.2 * u_auroraIntensity;
+      float i3 = r3 * 1.0 * u_auroraIntensity;
 
-      float r5 = auroraRibbon(uv, t * 1.1, -0.10, 0.10, 3.5, 0.18, 5.7);
-      vec3 r5color = mix(
-        vec3(1.0, 0.30, 0.70),
-        vec3(0.50, 0.30, 0.90),
-        0.5 + 0.5 * sin(uv.y * 6.0 + t * 0.5 + 3.0)
-      );
-
-      float r6 = auroraRibbon(uv, t * 0.65, 0.55, 0.14, 2.2, 0.20, 3.5);
-      vec3 r6color = mix(
-        vec3(0.65, 0.10, 0.85),
-        vec3(0.75, 0.15, 0.60),
-        0.5 + 0.5 * sin(uv.y * 3.0 - t * 0.3 + 1.5)
-      );
-
-      float r7 = auroraRibbon(uv, t * 0.5, -0.20, 0.35, 1.5, 0.30, 6.2);
-      vec3 r7color = mix(
-        vec3(0.55, 0.08, 0.40),
-        vec3(0.45, 0.12, 0.50),
-        0.5 + 0.5 * sin(uv.y * 2.5 + t * 0.1 + 4.0)
-      );
-
-      float i1 = r1 * 1.4 * u_auroraIntensity;
-      float i2 = r2 * 1.1 * u_auroraIntensity;
-      float i3 = r3 * 0.9 * u_auroraIntensity;
-      float i4 = r4 * 0.5 * u_auroraIntensity;
-      float i5 = r5 * 0.8 * u_auroraIntensity;
-      float i6 = r6 * 0.6 * u_auroraIntensity;
-      float i7 = r7 * 0.35 * u_auroraIntensity;
-
-      vec3 auroraLight = r1color * i1 + r2color * i2 + r3color * i3
-                       + r4color * i4 + r5color * i5 + r6color * i6 + r7color * i7;
+      vec3 auroraLight = r1color * i1 + r2color * i2 + r3color * i3;
 
       float pulse = 0.85 + 0.15 * sin(t * 0.8) * sin(t * 0.53 + 1.0);
       auroraLight *= pulse;
 
       float glowY = smoothstep(-0.3, 0.0, uv.y) * smoothstep(0.75, 0.25, uv.y);
-      float totalAurora = i1 + i2 + i3 + i4 + i5 + i6 + i7;
+      float totalAurora = i1 + i2 + i3;
       vec3 atmosphericGlow = mix(
         vec3(0.15, 0.06, 0.12),
         vec3(0.10, 0.05, 0.15),
         0.5 + 0.5 * sin(t * 0.15)
-      ) * glowY * min(totalAurora, 2.5) * 0.4;
+      ) * glowY * min(totalAurora, 2.5) * 0.45;
 
       col += auroraLight + atmosphericGlow;
 
@@ -922,12 +874,10 @@ function initAuroraShader() {
         vec3 iceSurface = mix(iceColor, iceCrystalColor, crystal * 0.5);
 
         vec2 reflUV = vec2(uv.x, -uv.y - groundLine * 2.0);
-        float rr1 = auroraRibbon(reflUV, t, 0.0, 0.25, 2.5, 0.28, 0.0) * 0.3;
-        float rr2 = auroraRibbon(reflUV, t * 0.9, 0.35, 0.20, 2.8, 0.24, 2.1) * 0.2;
-        float rr3 = auroraRibbon(reflUV, t * 0.75, -0.30, 0.18, 3.0, 0.22, 4.3) * 0.15;
-        vec3 reflectionColor = r1color * rr1 + r2color * rr2 + r3color * rr3;
+        float rr = auroraRibbon(reflUV, t, 0.0, 0.25, 2.5, 0.28, 0.0) * 0.45;
+        vec3 reflectionColor = r1color * rr;
         reflectionColor *= u_auroraIntensity * pulse;
-        float reflStrength = smoothstep(0.25, 0.0, perspY) * 0.6;
+        float reflStrength = smoothstep(0.25, 0.0, perspY) * 0.65;
         float sparkle = pow(crystal, 3.0) * reflStrength;
         vec3 sparkleColor = vec3(0.9, 0.85, 0.7) * sparkle * 0.3;
         iceSurface += reflectionColor * reflStrength + sparkleColor;
@@ -984,7 +934,7 @@ function initAuroraShader() {
   const uMouse2 = gl2.getUniformLocation(prog2, 'u_mouse');
 
   let mouseXVal = -1.0, mouseYVal = -1.0;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.0);
 
   function resize() {
     const w = Math.round(canvas.clientWidth * dpr);
