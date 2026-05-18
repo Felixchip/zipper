@@ -768,20 +768,30 @@ function draw(){
     if(layer===2&&p3BaseCanvas&&p3Ctx){
       const vid=document.querySelector('#p3 .p3-vid');
       try {
+        // Clear composite canvas background to solid dark base
+        p3Ctx.fillStyle = '#0a0a0a';
+        p3Ctx.fillRect(0,0,p3CompositeCanvas.width,p3CompositeCanvas.height);
+        
+        // Draw the dynamic background shader frame onto composite canvas
+        const shaderCanvas=document.getElementById('p3-bg-canvas');
+        if(shaderCanvas){
+          p3Ctx.drawImage(shaderCanvas,0,0,p3CompositeCanvas.width,p3CompositeCanvas.height);
+        }
+        
+        // Overlay the transparent DOM screenshot of Page 3 containing texts/layouts
+        p3Ctx.drawImage(p3BaseCanvas,0,0);
+        
+        // Draw video overlay on top if ready
         if(vid&&vid.readyState>=2){
           const r=vid.getBoundingClientRect(), sc=Math.max(2,window.devicePixelRatio||2);
-          p3Ctx.drawImage(p3BaseCanvas,0,0);
           const x=r.left*sc, y=r.top*sc, w=r.width*sc, h=r.height*sc;
           p3Ctx.save();p3Ctx.beginPath();
           if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
           p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
-          
-          gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
-          gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
-        } else {
-          gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
-          gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3BaseCanvas);
         }
+        
+        gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
       } catch (err) {
         gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3BaseCanvas);
@@ -927,13 +937,13 @@ async function capturePage(id){
     const sc = Math.max(2, dpr);
     
     const origBg = el.style.background;
-    if(id==='p2'){
+    if(id==='p2'||id==='p3'){
       el.style.background='transparent';
     }
     
     const canvas=await html2canvas(el,{width:W,height:H,scale:sc,useCORS:true,backgroundColor:null,logging:false});
     
-    if(id==='p2'){
+    if(id==='p2'||id==='p3'){
       el.style.background=origBg;
     }
     
