@@ -162,19 +162,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 #p3 .video-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0) 40%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
   padding: 24px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  opacity: 1;
   z-index: 10;
   pointer-events: auto;
-}
-#p3 .p3-video-container:hover .video-overlay {
-  opacity: 1;
 }
 #p3 .p3-play-btn {
   position: absolute;
@@ -668,7 +664,7 @@ function maskTopPage(){
 }
 
 // ── Input ──────────────────────────────────────────────────────
-async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;}
+async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;const hint=document.getElementById('hint');if(hint)hint.style.opacity='0';}
 function dragMove(y){
   if(!dragging||done)return;
   const newRow=Math.max(0,Math.min(ROWS,Math.round(y/sy)));
@@ -1197,10 +1193,14 @@ window.addEventListener('load', () => {
     vid.addEventListener('play', () => {
       playIcon.style.display = 'none';
       pauseIcon.style.display = 'block';
+      playBtn.style.opacity = '0';
+      playBtn.style.pointerEvents = 'none';
     });
     vid.addEventListener('pause', () => {
       playIcon.style.display = 'block';
       pauseIcon.style.display = 'none';
+      playBtn.style.opacity = '1';
+      playBtn.style.pointerEvents = 'auto';
     });
 
     function formatTime(secs) {
