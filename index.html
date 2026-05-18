@@ -666,7 +666,17 @@ async function capturePage(id){
   if(!el)return null;
   const dpr = window.devicePixelRatio || 2;
   const sc = Math.max(2, dpr);
+  
+  const origBg = el.style.background;
+  if(id==='p2'){
+    el.style.background='transparent';
+  }
+  
   const canvas=await html2canvas(el,{width:W,height:H,scale:sc,useCORS:true,backgroundColor:null,logging:false});
+  
+  if(id==='p2'){
+    el.style.background=origBg;
+  }
   
   if(id==='p3'){
     p3BaseCanvas=canvas;
