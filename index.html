@@ -321,7 +321,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
         <div class="logo-sub">STORIES</div>
       </div>
       <div class="p3-video-container">
-        <video class="p3-vid" src="https://vjs.zencdn.net/v/oceans.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
+        <video class="p3-vid" src="https://vjs.zencdn.net/v/oceans.mp4" autoplay loop muted playsinline crossorigin="anonymous" data-html2canvas-ignore="true"></video>
         <div class="video-overlay" data-html2canvas-ignore="true">
           <!-- Centered play/pause button -->
           <button class="p3-play-btn" aria-label="Play/Pause">
@@ -630,18 +630,24 @@ function draw(){
     }
     if(layer===2&&p3BaseCanvas&&p3Ctx){
       const vid=document.querySelector('#p3 .p3-vid');
-      if(vid&&vid.readyState>=2){
-        const r=vid.getBoundingClientRect(), sc=Math.max(2,window.devicePixelRatio||2);
-        p3Ctx.drawImage(p3BaseCanvas,0,0);
-        const x=r.left*sc, y=r.top*sc, w=r.width*sc, h=r.height*sc;
-        p3Ctx.save();p3Ctx.beginPath();
-        if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
-        p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
-        
-
-        
+      try {
+        if(vid&&vid.readyState>=2){
+          const r=vid.getBoundingClientRect(), sc=Math.max(2,window.devicePixelRatio||2);
+          p3Ctx.drawImage(p3BaseCanvas,0,0);
+          const x=r.left*sc, y=r.top*sc, w=r.width*sc, h=r.height*sc;
+          p3Ctx.save();p3Ctx.beginPath();
+          if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
+          p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
+          
+          gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
+          gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
+        } else {
+          gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
+          gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3BaseCanvas);
+        }
+      } catch (err) {
         gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
-        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3BaseCanvas);
       }
     }
     gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);gl.uniform1i(uTex,0);
@@ -738,46 +744,63 @@ let p2BaseCanvas=null, p2CompositeCanvas=null, p2Ctx=null;
 let p3BaseCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
 
 async function capturePage(id){
-  const el=document.getElementById(id);
-  if(!el)return null;
-  const dpr = window.devicePixelRatio || 2;
-  const sc = Math.max(2, dpr);
-  
-  const origBg = el.style.background;
-  if(id==='p2'){
-    el.style.background='transparent';
-  }
-  
-  const canvas=await html2canvas(el,{width:W,height:H,scale:sc,useCORS:true,backgroundColor:null,logging:false});
-  
-  if(id==='p2'){
-    el.style.background=origBg;
-  }
-  
-  if(id==='p3'){
-    p3BaseCanvas=canvas;
-    p3CompositeCanvas=document.createElement('canvas');
-    p3CompositeCanvas.width=canvas.width;p3CompositeCanvas.height=canvas.height;
-    p3Ctx=p3CompositeCanvas.getContext('2d',{alpha:false});
-  }
-  
-  if(id==='p2'){
-    p2BaseCanvas=canvas;
-    if(!p2CompositeCanvas){
-      p2CompositeCanvas=document.createElement('canvas');
-      p2CompositeCanvas.width=canvas.width;p2CompositeCanvas.height=canvas.height;
-      p2Ctx=p2CompositeCanvas.getContext('2d',{alpha:false});
+  try {
+    const el=document.getElementById(id);
+    if(!el)return null;
+    const dpr = window.devicePixelRatio || 2;
+    const sc = Math.max(2, dpr);
+    
+    const origBg = el.style.background;
+    if(id==='p2'){
+      el.style.background='transparent';
     }
-  }
+    
+    const canvas=await html2canvas(el,{width:W,height:H,scale:sc,useCORS:true,backgroundColor:null,logging:false});
+    
+    if(id==='p2'){
+      el.style.background=origBg;
+    }
+    
+    if(id==='p3'){
+      p3BaseCanvas=canvas;
+      p3CompositeCanvas=document.createElement('canvas');
+      p3CompositeCanvas.width=canvas.width;p3CompositeCanvas.height=canvas.height;
+      p3Ctx=p3CompositeCanvas.getContext('2d',{alpha:false});
+    }
+    
+    if(id==='p2'){
+      p2BaseCanvas=canvas;
+      if(!p2CompositeCanvas){
+        p2CompositeCanvas=document.createElement('canvas');
+        p2CompositeCanvas.width=canvas.width;p2CompositeCanvas.height=canvas.height;
+        p2Ctx=p2CompositeCanvas.getContext('2d',{alpha:false});
+      }
+    }
 
-  const t=gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,t);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  return t;
+    const t=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,t);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    return t;
+  } catch (err) {
+    console.error("Error capturing page", id, err);
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = id === 'p1' ? '#1c1b18' : (id === 'p2' ? '#0a0618' : '#0c152a');
+    ctx.fillRect(0,0,128,128);
+    const t=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,t);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    return t;
+  }
 }
 
 // ── Aurora Veil Shader ─────────────────────────────────────────
