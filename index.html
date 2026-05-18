@@ -638,10 +638,7 @@ function draw(){
         if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
         p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
         
-        // Draw transparent overlay canvas on top of the live video frame
-        if (p3OverlayCanvas) {
-          p3Ctx.drawImage(p3OverlayCanvas, x, y, w, h);
-        }
+
         
         gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
@@ -738,7 +735,7 @@ document.addEventListener('click',e=>{
 // ── Capture pages as WebGL textures ────────────────────────────
 let pageTextures=[null, null, null];
 let p2BaseCanvas=null, p2CompositeCanvas=null, p2Ctx=null;
-let p3BaseCanvas=null, p3OverlayCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
+let p3BaseCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
 
 async function capturePage(id){
   const el=document.getElementById(id);
@@ -759,20 +756,6 @@ async function capturePage(id){
   
   if(id==='p3'){
     p3BaseCanvas=canvas;
-    
-    // Capture the transparent overlay canvas
-    const overlayEl = document.querySelector('#p3 .video-overlay');
-    if (overlayEl) {
-      p3OverlayCanvas = await html2canvas(overlayEl, {
-        width: overlayEl.offsetWidth,
-        height: overlayEl.offsetHeight,
-        scale: sc,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false
-      });
-    }
-    
     p3CompositeCanvas=document.createElement('canvas');
     p3CompositeCanvas.width=canvas.width;p3CompositeCanvas.height=canvas.height;
     p3Ctx=p3CompositeCanvas.getContext('2d',{alpha:false});
