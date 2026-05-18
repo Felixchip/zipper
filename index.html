@@ -22,7 +22,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 /* Page 1 — light */
 #p1{background:#ea5b67 url('gummy-bg.png') center/cover;}
-#p1::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center, rgba(234,91,103,0) 0%, rgba(234,91,103,0.4) 100%);pointer-events:none;}
+#p1::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%);pointer-events:none;}
 #p1 nav{display:flex;justify-content:space-between;align-items:center;padding:0 40px;height:60px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;}
 .logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#111;}
 .navlinks{display:flex;gap:28px;}
@@ -373,7 +373,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
       <div class="sub">A real-time Verlet cloth physics and WebGL texture mapping experiment. Grab the zipper handle and drag it down to peel back the layers.</div>
       <div class="row">
         <button class="btnp">Pull to start ↓</button>
-        <a class="btns" href="https://github.com/Felixchip/zipper" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">View source</a>
       </div>
     </div>
   </div>
@@ -1074,13 +1073,13 @@ async function init(){
   build();
   requestAnimationFrame(function loop(){tick();maskTopPage();draw();requestAnimationFrame(loop);});
   
-  // Capture page textures in a deferred background task to keep initial loading instantaneous
+  // Capture page textures in a deferred background task to keep initial loading instantaneous and prevent any render flicker
   setTimeout(async () => {
     for(let i=0; i<LAYERS.length; i++){
       const t=await capturePage(LAYERS[i].page);
       pageTextures[i] = t;
     }
-  }, 100);
+  }, 800);
 }
 
 // Pull zipper down slightly hint animation
