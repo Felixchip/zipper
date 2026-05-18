@@ -282,7 +282,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 #tc{z-index:6;}
 
 /* Zipper handle */
-#zh{position:fixed;left:50%;transform:translateX(-50%);width:60px;height:138px;top:-12px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 4px 15px rgba(0,0,0,.5));transition:opacity .3s;}
+#zh{position:fixed;left:50%;transform:translateX(-50%);width:48px;height:110px;top:-10px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 4px 15px rgba(0,0,0,.5));transition:opacity .3s;}
 #zh.done{opacity:0;pointer-events:none;}
 
 </style>
@@ -387,6 +387,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 <path d="M55.159 2.30884C56.2509 1.14136 57.6393 0.5 59.0748 0.5H89.0213C92.3527 0.5 95.0533 3.88343 95.0533 8.05709V174.943C95.0533 179.117 92.3527 182.5 89.0213 182.5H23.4978C19.86 182.5 17.0499 178.496 17.5154 173.976L22.4358 126.201C22.5882 124.722 22.3877 123.219 21.8597 121.882L0.626026 68.1235C-0.599575 65.0205 0.0145604 61.271 2.11651 59.0235L55.159 2.30884Z" fill="url(#paint0_linear_157_25)"/>
 <path d="M114.841 2.30884C113.749 1.14136 112.361 0.5 110.925 0.5H80.9787C77.6473 0.5 74.9467 3.88343 74.9467 8.05709V174.943C74.9467 179.117 77.6473 182.5 80.9787 182.5H146.502C150.14 182.5 152.95 178.496 152.485 173.976L147.564 126.201C147.412 124.722 147.612 123.219 148.14 121.882L169.374 68.1235C170.6 65.0205 169.985 61.271 167.883 59.0235L114.841 2.30884Z" fill="url(#paint1_linear_157_25)"/>
 </g>
+<g id="pull-tab" style="transform-origin: 85px 110px;">
 <g filter="url(#filter1_ii_157_25)">
 <path d="M128.143 110C131.366 110 134.013 112.547 134.138 115.768L142.951 343.298C142.969 343.764 142.932 344.231 142.841 344.689L134.869 385.16C134.314 387.972 131.848 390 128.982 390H40.9732C38.1068 390 35.6407 387.972 35.0865 385.16L27.1138 344.689C27.0236 344.231 26.9864 343.764 27.0044 343.298L35.8169 115.768C35.9418 112.547 38.5889 110 41.8121 110H128.143ZM57.8892 117C54.5757 117 51.8892 119.686 51.8892 123V181.489C51.8893 183.199 52.6186 184.827 53.8941 185.966L82.8081 211.771C85.1611 213.87 88.7381 213.79 90.9947 211.587L117.257 185.941C118.413 184.812 119.066 183.265 119.066 181.649V123C119.066 119.686 116.38 117 113.066 117H57.8892Z" fill="url(#paint2_linear_157_25)"/>
 </g>
@@ -399,6 +400,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 </g>
 <g filter="url(#filter3_dii_157_25)">
 <path d="M55.2059 4.19607C55.0939 1.91268 56.915 0 59.2011 0H110.825C113.101 0 114.919 1.89723 114.821 4.17162L108.968 140.452C108.427 153.058 98.0492 163 85.4311 163C72.8687 163 62.5162 153.143 61.9004 140.596L55.2059 4.19607Z" fill="url(#paint3_linear_157_25)"/>
+</g>
 </g>
 <defs>
 <filter id="filter0_ii_157_25" x="-4" y="0.5" width="176.7" height="186" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
@@ -546,6 +548,7 @@ const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
 const flatCz=4*psx*sy; // cross product when perfectly flat
 let L=[],R=[],LC=[],RC=[];
 let zipRow=0,dragging=false,active=false,done=false,falling=false;
+let dangleAngle = 0, dangleVel = 0, prevZipY = 0, prevMouseX = null, targetDangleForce = 0;
 
 const lp=(r,c)=>L[r*PCOLS+c];
 const rp=(r,c)=>R[r*PCOLS+c];
@@ -572,7 +575,8 @@ function updateHandleStyle(){}
 
 function reset(){
   zipRow=0;active=false;done=false;falling=false;dragging=false;
-  zh.style.top='-12px';
+  zh.style.top='-10px';
+  dangleAngle = 0; dangleVel = 0; prevZipY = 0; prevMouseX = null; targetDangleForce = 0;
   updateHandleStyle();
   build();
 }
@@ -622,7 +626,40 @@ function tick(){
     if(allOff){done=true;advance();}
   }
 }
-
+function tickDangle() {
+  const currentZipY = zipRow * sy;
+  const dy = currentZipY - prevZipY;
+  prevZipY = currentZipY;
+  
+  // Gravity/restoring force towards 0
+  const gravity = -0.06 * dangleAngle; 
+  
+  // Inertial push from vertical movement (friction/drag tilts it up slightly)
+  let verticalPush = 0;
+  if (dragging) {
+    verticalPush = -dy * 1.2; 
+  } else if (dy > 0.01) {
+    // During auto-pull hint
+    verticalPush = -dy * 0.8;
+  }
+  
+  // Apply forces
+  dangleVel += gravity + verticalPush + targetDangleForce;
+  dangleVel *= 0.93; // Damping/friction
+  dangleAngle += dangleVel;
+  
+  // Decay external target force
+  targetDangleForce *= 0.85;
+  
+  // Limit max swing angle to 40 degrees
+  dangleAngle = Math.max(-40, Math.min(40, dangleAngle));
+  
+  // Update the DOM transform
+  const tab = document.getElementById('pull-tab');
+  if (tab) {
+    tab.style.transform = `rotate(${dangleAngle}deg)`;
+  }
+}
 function advance(){
   if(layer>=LAYERS.length) return;
   const el=document.getElementById(LAYERS[layer].page);
@@ -751,7 +788,14 @@ function maskTopPage(){
 }
 
 // ── Input ──────────────────────────────────────────────────────
-async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;}
+async function dragStart(){
+  if(done||layer>=LAYERS.length)return;
+  if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}
+  active=true;
+  dragging=true;
+  prevMouseX = null;
+  dangleVel += (Math.random() - 0.5) * 18; // Playful kick on click!
+}
 function dragMove(y){
   if(!dragging||done)return;
   const newRow=Math.max(0,Math.min(ROWS,y/sy));
@@ -759,7 +803,7 @@ function dragMove(y){
   const newInt=Math.floor(newRow);
   if(newInt>prevInt)kick(prevInt,newInt);
   zipRow=newRow;
-  zh.style.top=Math.max(-12,zipRow*sy-12)+'px';
+  zh.style.top=Math.max(-10,zipRow*sy-10)+'px';
 }
 
 zh.addEventListener('mousedown',e=>{dragStart();e.preventDefault();});
@@ -767,12 +811,27 @@ zh.addEventListener('touchstart',e=>{dragStart();e.preventDefault();},{passive:f
 window.addEventListener('mouseup',()=>{dragging=false;clothGrabEnd();});
 window.addEventListener('touchend',()=>{dragging=false;clothGrabEnd();});
 window.addEventListener('mousemove',e=>{
-  if(dragging)dragMove(e.clientY);
+  if(dragging){
+    if(prevMouseX!==null){
+      const dx=e.clientX-prevMouseX;
+      targetDangleForce+=dx*0.15;
+    }
+    prevMouseX=e.clientX;
+    dragMove(e.clientY);
+  }
   if(clothGrab){clothGrabX=e.clientX;clothGrabY=e.clientY;}
 });
 window.addEventListener('touchmove',e=>{
-  if(dragging)dragMove(e.touches[0].clientY);
-  if(clothGrab){clothGrabX=e.touches[0].clientX;clothGrabY=e.touches[0].clientY;}
+  if(dragging&&e.touches[0]){
+    const t=e.touches[0];
+    if(prevMouseX!==null){
+      const dx=t.clientX-prevMouseX;
+      targetDangleForce+=dx*0.15;
+    }
+    prevMouseX=t.clientX;
+    dragMove(t.clientY);
+  }
+  if(clothGrab&&e.touches[0]){clothGrabX=e.touches[0].clientX;clothGrabY=e.touches[0].clientY;}
 },{passive:false});
 
 // ── Cloth interaction — click/drag freed particles ─────────────
@@ -1162,7 +1221,7 @@ async function init(){
   
   // Start simulation immediately so the UI paints and is interactive instantly
   build();
-  requestAnimationFrame(function loop(){tick();maskTopPage();draw();requestAnimationFrame(loop);});
+  requestAnimationFrame(function loop(){tick();maskTopPage();tickDangle();draw();requestAnimationFrame(loop);});
   
   // Capture page textures in a deferred background task to keep initial loading instantaneous and prevent any render flicker
   setTimeout(async () => {
@@ -1196,7 +1255,7 @@ function pullDownSlightly() {
       if (newInt > prevInt) kick(prevInt, newInt);
       
       zipRow = newRow;
-      zh.style.top = Math.max(-12, zipRow * sy - 12) + 'px';
+      zh.style.top = Math.max(-10, zipRow * sy - 10) + 'px';
       
       if (zipRow < targetRow) {
         requestAnimationFrame(step);
