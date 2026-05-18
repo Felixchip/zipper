@@ -1096,13 +1096,20 @@ function pullDownSlightly() {
   
   function step() {
     if (currentRow < targetRow && !dragging && !done) {
-      currentRow += 0.8;
-      if (currentRow > targetRow) currentRow = targetRow;
+      // Premium ease-out deceleration for a silky smooth and gentle slide
+      const dist = targetRow - currentRow;
+      const speed = Math.max(0.08, dist * 0.045);
+      currentRow += speed;
+      
+      if (currentRow >= targetRow - 0.15) currentRow = targetRow;
       const newRow = Math.round(currentRow);
       if (newRow > zipRow) kick(zipRow, newRow);
       zipRow = newRow;
       zh.style.top = Math.max(-22, zipRow * sy - 22) + 'px';
-      requestAnimationFrame(step);
+      
+      if (currentRow < targetRow) {
+        requestAnimationFrame(step);
+      }
     }
   }
   step();
