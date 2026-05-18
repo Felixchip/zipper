@@ -57,14 +57,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   pointer-events: none;
   z-index: 0;
 }
-#p2 .p2-nav{position:absolute;top:40px;left:0;right:0;display:flex;justify-content:center;align-items:center;font-size:13px;color:#fff;font-weight:500;z-index:10;}
+#p2 .p2-nav{position:absolute;top:100px;left:0;right:0;display:flex;justify-content:center;align-items:center;z-index:10;}
 #p2 .nav-center{
-  font-family:'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size:14px;
-  font-weight:600;
-  letter-spacing:0.04em;
-  color:rgba(255,255,255,0.85);
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:15px;
+  font-weight:400;
+  font-style:italic;
+  color:rgba(255,255,255,0.7);
+  letter-spacing:0.02em;
+  text-shadow:0 2px 10px rgba(0,0,0,0.3);
 }
 #p2 .hero{position:relative;z-index:2;gap:18px;}
 #p2 h1{
@@ -97,7 +98,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 }
 
 /* Page 3 — clean dark cinematic */
-#p3{background:#0c0b10; color:#fff; overflow:hidden;}
+#p3{background: radial-gradient(circle at center, #0c152a 0%, #060a15 100%); color:#fff; overflow:hidden;}
 #p3::before{display:none;}
 #p3 .hero{
   position:relative;
@@ -147,56 +148,120 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   width:100%;
   max-width:880px;
   height:495px;
-  border-radius:12px;
+  border-radius:20px;
   overflow:hidden;
-  box-shadow:0 24px 64px rgba(0,0,0,0.15);
+  box-shadow:0 24px 64px rgba(0,0,0,0.4);
+  border:1px solid rgba(255,255,255,0.08);
 }
 #p3 .p3-vid{
   width:100%;
   height:100%;
   object-fit:cover;
-  border-radius:12px;
-  box-shadow:none;
-  margin-top:0;
+  display:block;
 }
-#p3 .video-overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,0.15);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  pointer-events:none;
+#p3 .video-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  pointer-events: auto;
 }
-#p3 .overlay-logo{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:4px;
+#p3 .p3-video-container:hover .video-overlay {
+  opacity: 1;
 }
-#p3 .overlay-title{
-  font-family:'Playfair Display', Georgia, serif;
-  font-size:96px;
-  font-weight:700;
-  color:#fff;
-  line-height:0.9;
-  letter-spacing:-0.03em;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.25);
+#p3 .p3-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(10,10,10,0.85);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
 }
-#p3 .overlay-sub{
-  font-family:'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size:24px;
-  font-weight:700;
-  letter-spacing:0.25em;
-  color:#fff;
-  margin-left:0.25em;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
-  display:flex;
-  align-items:center;
-  gap:6px;
+#p3 .p3-play-btn:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: #fff;
+  color: #000;
+  border-color: #fff;
 }
-#p3 .overlay-sub .triangle{
-  font-size:18px;
+#p3 .p3-controls-bar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+  pointer-events: auto;
+}
+#p3 .p3-scrubber-container {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+#p3 .p3-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 2px;
+  transition: height 0.15s ease;
+}
+#p3 .p3-scrubber-container:hover .p3-progress-track {
+  height: 6px;
+}
+#p3 .p3-progress-fill {
+  position: absolute;
+  left: 0;
+  height: 4px;
+  background: #ffcc50;
+  border-radius: 2px;
+  transition: height 0.15s ease;
+}
+#p3 .p3-scrubber-container:hover .p3-progress-fill {
+  height: 6px;
+}
+#p3 .p3-progress-thumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffcc50;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 0 10px rgba(255, 204, 80, 0.8);
+}
+#p3 .p3-scrubber-container:hover .p3-progress-thumb {
+  opacity: 1;
+}
+#p3 .p3-time-display {
+  font-size: 11px;
+  font-family: monospace;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.05em;
+  align-self: flex-end;
 }
 
 /* Page 4 — Felix */
@@ -261,10 +326,24 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
       </div>
       <div class="p3-video-container">
         <video class="p3-vid" src="https://vjs.zencdn.net/v/oceans.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
-        <div class="video-overlay">
-          <div class="overlay-logo">
-            <div class="overlay-title">Zipper</div>
-            <div class="overlay-sub">STORIES</div>
+        <div class="video-overlay" data-html2canvas-ignore="true">
+          <!-- Centered play/pause button -->
+          <button class="p3-play-btn" aria-label="Play/Pause">
+            <svg class="play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg class="pause-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor" style="display:none;">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+          <!-- Bottom controls bar -->
+          <div class="p3-controls-bar">
+            <div class="p3-scrubber-container">
+              <div class="p3-progress-track"></div>
+              <div class="p3-progress-fill" style="width: 0%;"></div>
+              <div class="p3-progress-thumb" style="left: 0%;"></div>
+            </div>
+            <div class="p3-time-display">0:00 / 0:00</div>
           </div>
         </div>
       </div>
@@ -465,7 +544,11 @@ function advance(){
   const el=document.getElementById(LAYERS[layer].page);
   if(el){el.style.clipPath='';el.style.display='none';}
   layer++;
-  if(layer>=LAYERS.length){zh.classList.add('done');document.getElementById('hint').style.opacity='0';}
+  if(layer>0){
+    const hint=document.getElementById('hint');
+    if(hint) hint.style.opacity='0';
+  }
+  if(layer>=LAYERS.length){zh.classList.add('done');}
   reset();
 }
 
@@ -1080,6 +1163,94 @@ window.addEventListener('load', () => {
     
     window.addEventListener('touchend', () => {
       isDragging = false;
+    });
+  }
+  
+  // Page 3 Custom Video Controllers
+  const p3Container = document.querySelector('#p3 .p3-video-container');
+  if (p3Container) {
+    const vid = p3Container.querySelector('.p3-vid');
+    const playBtn = p3Container.querySelector('.p3-play-btn');
+    const playIcon = playBtn.querySelector('.play-icon');
+    const pauseIcon = playBtn.querySelector('.pause-icon');
+    const scrubber = p3Container.querySelector('.p3-scrubber-container');
+    const fill = p3Container.querySelector('.p3-progress-fill');
+    const thumb = p3Container.querySelector('.p3-progress-thumb');
+    const timeDisp = p3Container.querySelector('.p3-time-display');
+
+    function togglePlay() {
+      if (vid.paused) {
+        vid.play().then(() => {
+          playIcon.style.display = 'none';
+          pauseIcon.style.display = 'block';
+        });
+      } else {
+        vid.pause();
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      }
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+    vid.addEventListener('click', togglePlay);
+
+    vid.addEventListener('play', () => {
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'block';
+    });
+    vid.addEventListener('pause', () => {
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+    });
+
+    function formatTime(secs) {
+      if (isNaN(secs)) return '0:00';
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    vid.addEventListener('timeupdate', () => {
+      if (vid.duration) {
+        const pct = (vid.currentTime / vid.duration) * 100;
+        fill.style.width = pct + '%';
+        thumb.style.left = pct + '%';
+        timeDisp.textContent = `${formatTime(vid.currentTime)} / ${formatTime(vid.duration)}`;
+      }
+    });
+
+    let isDraggingScrubber = false;
+    
+    function scrub(e) {
+      if (!vid.duration) return;
+      const rect = scrubber.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let pct = (clientX - rect.left) / rect.width;
+      pct = Math.max(0, Math.min(1, pct));
+      vid.currentTime = pct * vid.duration;
+    }
+
+    scrubber.addEventListener('mousedown', (e) => {
+      isDraggingScrubber = true;
+      scrub(e);
+    });
+    scrubber.addEventListener('touchstart', (e) => {
+      isDraggingScrubber = true;
+      scrub(e);
+    }, { passive: true });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDraggingScrubber) scrub(e);
+    });
+    window.addEventListener('touchmove', (e) => {
+      if (isDraggingScrubber) scrub(e);
+    }, { passive: true });
+
+    window.addEventListener('mouseup', () => {
+      isDraggingScrubber = false;
+    });
+    window.addEventListener('touchend', () => {
+      isDraggingScrubber = false;
     });
   }
 });
