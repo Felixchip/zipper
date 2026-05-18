@@ -61,8 +61,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 #p2 .sub{font-size:16px;color:rgba(255,255,255,.6);max-width:420px;line-height:1.6;}
 #p2 .controls{
   display:flex;gap:40px;margin-top:24px;padding:24px 36px;
-  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
-  border-radius:20px;backdrop-filter:blur(16px);
+  background:rgba(15,22,35,0.65);border:1px solid rgba(255,255,255,0.06);
+  border-radius:20px;
 }
 #p2 .slider-group{display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
 #p2 .slider-group label{font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,.5);font-weight:600;}
@@ -553,7 +553,10 @@ async function init(){
   requestAnimationFrame(function loop(){tick();maskTopPage();draw();requestAnimationFrame(loop);});
 }
 
-init();
+// Wait for page assets and styles to completely paint before capturing
+window.addEventListener('load', () => {
+  setTimeout(init, 300);
+});
 </script>
 </body>
 </html>
