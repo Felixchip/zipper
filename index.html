@@ -198,7 +198,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 
 /* Canvases — above pages, pointer-events passthrough */
-#cv,#tc{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
+#cv,#tc,#tcb{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
+#tcb{z-index:4;}
 #cv{z-index:5;}
 #tc{z-index:6;}
 
@@ -285,6 +286,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   </div>
 </div>
 
+<canvas id="tcb"></canvas>
 <canvas id="cv"></canvas>
 <canvas id="tc"></canvas>
 
@@ -313,10 +315,13 @@ let layer=0;
 
 const cv=document.getElementById('cv');
 const tc=document.getElementById('tc');
+const tcb=document.getElementById('tcb');
 const zh=document.getElementById('zh');
-cv.width=tc.width=W*dpr; cv.height=tc.height=H*dpr;
+cv.width=tc.width=tcb.width=W*dpr; cv.height=tc.height=tcb.height=H*dpr;
 const tctx=tc.getContext('2d');
 tctx.scale(dpr, dpr);
+const tbctx=tcb.getContext('2d');
+tbctx.scale(dpr, dpr);
 
 // ── WebGL setup ────────────────────────────────────────────────
 const VS=`attribute vec2 aPos;attribute vec2 aUV;attribute float aLight;
@@ -482,16 +487,18 @@ function panel(getFn,isRight){
 }
 
 function teeth(){
-  tctx.clearRect(0,0,W,H);if(!active||done)return;
+  tctx.clearRect(0,0,W,H);
+  tbctx.clearRect(0,0,W,H);
+  if(!active||done)return;
   const tCol=THEMES[layer]?.teeth||'220,205,255';
   tctx.save();tctx.strokeStyle=`rgba(${THEMES[layer]?.line||'255,255,255'},.07)`;tctx.lineWidth=1;tctx.setLineDash([3,8]);
   tctx.beginPath();tctx.moveTo(W/2,zipRow*sy);tctx.lineTo(W/2,H);tctx.stroke();tctx.setLineDash([]);tctx.restore();
   for(let r=1;r<ROWS;r++){
     const lpt=lp(r,PCOLS-1),rpt=rp(r,0);
     if(r<zipRow){
-      tctx.fillStyle=`rgba(${tCol},.38)`;
-      tctx.beginPath();tctx.roundRect(lpt.x-7,lpt.y-3.5,7,7,1.5);tctx.fill();
-      tctx.beginPath();tctx.roundRect(rpt.x,rpt.y-3.5,7,7,1.5);tctx.fill();
+      tbctx.fillStyle=`rgba(${tCol},.38)`;
+      tbctx.beginPath();tbctx.roundRect(lpt.x-7,lpt.y-3.5,7,7,1.5);tbctx.fill();
+      tbctx.beginPath();tbctx.roundRect(rpt.x,rpt.y-3.5,7,7,1.5);tbctx.fill();
     }else{
       const mx=(lpt.x+rpt.x)/2,my=(lpt.y+rpt.y)/2;
       tctx.fillStyle=`rgba(${tCol},.9)`;
