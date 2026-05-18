@@ -195,7 +195,7 @@ const PCOLS=22,ROWS=28,GRAV=0.55,DAMP=0.975,ITERS=3,SAG=1.15;
 const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
 const flatCz=4*psx*sy; // cross product when perfectly flat
 let L=[],R=[],LC=[],RC=[];
-let zipRow=0,dragging=false,active=false,done=false;
+let zipRow=0,dragging=false,active=false,done=false,falling=false;
 
 const lp=(r,c)=>L[r*PCOLS+c];
 const rp=(r,c)=>R[r*PCOLS+c];
@@ -227,7 +227,7 @@ function updateHandleStyle(){
 }
 
 function reset(){
-  zipRow=0;active=false;done=false;dragging=false;
+  zipRow=0;active=false;done=false;falling=false;dragging=false;
   zh.style.top='-22px';
   updateHandleStyle();
   build();
@@ -256,8 +256,24 @@ function tick(){
   if(!active||done)return;
   for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+GRAV;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
   for(let i=0;i<ITERS;i++){relax(LC);relax(RC);}
-  snapClosed();
-  if(zipRow>=ROWS-1&&!done){done=true;setTimeout(advance,350);}
+  if(!falling) snapClosed();
+  if(zipRow>=ROWS-1&&!falling&&!done){
+    // Free ALL rows — let the whole cloth fall with gravity
+    falling=true;
+    for(const p of [...L,...R]){
+      if(!p.freed){p.freed=true;p.px=p.x;p.py=p.y-1;}
+    }
+    // Clip away the DOM page fully
+    const id=LAYERS[layer]?.page;
+    const el=id&&document.getElementById(id);
+    if(el) el.style.clipPath='polygon(0 100%, 100% 100%, 100% 100%, 0 100%)';
+  }
+  // Check if all particles have fallen off screen
+  if(falling&&!done){
+    let allOff=true;
+    for(const p of [...L,...R]){if(p.y<H+400){allOff=false;break;}}
+    if(allOff){done=true;advance();}
+  }
 }
 
 function advance(){
@@ -326,7 +342,7 @@ function teeth(){
 
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-  if(layer<LAYERS.length&&!done&&pageTextures[layer]){
+  if(layer<LAYERS.length&&pageTextures[layer]&&!done){
     gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);gl.uniform1i(uTex,0);
     panel(lp,false);panel(rp,true);
   }
