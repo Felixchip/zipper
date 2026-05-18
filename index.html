@@ -217,6 +217,9 @@ function build(){
       LC.push(con(lp(r,c),lp(r+1,c+1),.4));LC.push(con(lp(r,c+1),lp(r+1,c),.4));
       RC.push(con(rp(r,c),rp(r+1,c+1),.4));RC.push(con(rp(r,c+1),rp(r+1,c),.4));
     }
+    // Bending Constraints (2 nodes away)
+    if(c<PCOLS-2){LC.push(con(lp(r,c),lp(r,c+2),0.2));RC.push(con(rp(r,c),rp(r,c+2),0.2));}
+    if(r<ROWS-2){LC.push(con(lp(r,c),lp(r+2,c),0.2,SAG));RC.push(con(rp(r,c),rp(r+2,c),0.2,SAG));}
   }
 }
 
@@ -308,8 +311,8 @@ function mesh(getFn,isRight){
       
       // Smooth continuous Half-Lambert style lighting
       let normalZ = cz/flatCz;
-      lt = 0.65 + 0.35 * normalZ;
-      lt = Math.max(0.25, Math.min(1.1, lt));
+      lt = 0.5 + 0.5 * normalZ;
+      lt = Math.max(0.3, Math.min(1.2, lt));
     }
     lights.push(lt);
   }
