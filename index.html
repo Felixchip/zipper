@@ -176,7 +176,7 @@ const FS=`precision mediump float;
 varying vec2 vUV;varying float vLight;uniform sampler2D uTex;
 void main(){
   vec4 c=texture2D(uTex,vUV);
-  gl_FragColor=vec4(c.rgb*clamp(vLight,0.05,1.0), 1.0);
+  gl_FragColor=vec4(c.rgb*clamp(vLight,0.2,1.1), 1.0);
 }`;
 
 const gl=cv.getContext('webgl',{antialias:true,alpha:true});
@@ -196,7 +196,7 @@ gl.enableVertexAttribArray(aPos);gl.enableVertexAttribArray(aUV);gl.enableVertex
 const pb=gl.createBuffer(),ub=gl.createBuffer(),lb=gl.createBuffer(),ib=gl.createBuffer();
 
 // ── Physics ────────────────────────────────────────────────────
-const PCOLS=22,ROWS=28,GRAV=0.55,DAMP=0.975,ITERS=3,SAG=1.15;
+const PCOLS=40,ROWS=48,GRAV=0.6,DAMP=0.95,ITERS=4,SAG=1.05;
 const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
 const flatCz=4*psx*sy; // cross product when perfectly flat
 let L=[],R=[],LC=[],RC=[];
@@ -305,11 +305,11 @@ function mesh(getFn,isRight){
     if(r>0&&r<ROWS-1&&c>0&&c<PCOLS-1){
       const up=getFn(r-1,c),dn=getFn(r+1,c),lf=getFn(r,c-1),rt=getFn(r,c+1);
       const cz=(rt.x-lf.x)*(dn.y-up.y)-(rt.y-lf.y)*(dn.x-up.x);
-      if(cz<0){
-        lt=Math.max(0.05,0.15+cz/flatCz*0.15);
-      }else{
-        lt=Math.max(0.4,Math.min(1.0,cz/flatCz));
-      }
+      
+      // Smooth continuous Half-Lambert style lighting
+      let normalZ = cz/flatCz;
+      lt = 0.65 + 0.35 * normalZ;
+      lt = Math.max(0.25, Math.min(1.1, lt));
     }
     lights.push(lt);
   }
