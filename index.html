@@ -585,7 +585,7 @@ function maskTopPage(){
 }
 
 // ── Input ──────────────────────────────────────────────────────
-function dragStart(){if(done||layer>=LAYERS.length)return;active=true;dragging=true;}
+async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;}
 function dragMove(y){
   if(!dragging||done)return;
   const newRow=Math.max(0,Math.min(ROWS,Math.round(y/sy)));
@@ -657,7 +657,7 @@ document.addEventListener('click',e=>{
 });
 
 // ── Capture pages as WebGL textures ────────────────────────────
-let pageTextures=[];
+let pageTextures=[null, null, null];
 let p2BaseCanvas=null, p2CompositeCanvas=null, p2Ctx=null;
 let p3BaseCanvas=null, p3OverlayCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
 
@@ -989,14 +989,17 @@ function initAuroraShader() {
 async function init(){
   initAuroraShader();
   
-  // Capture each page as a texture
-  for(const l of LAYERS){
-    const t=await capturePage(l.page);
-    pageTextures.push(t);
-  }
-  // Start simulation
+  // Start simulation immediately so the UI paints and is interactive instantly
   build();
   requestAnimationFrame(function loop(){tick();maskTopPage();draw();requestAnimationFrame(loop);});
+  
+  // Capture page textures in a deferred background task to keep initial loading instantaneous
+  setTimeout(async () => {
+    for(let i=0; i<LAYERS.length; i++){
+      const t=await capturePage(LAYERS[i].page);
+      pageTextures[i] = t;
+    }
+  }, 100);
 }
 
 // Slider interaction
@@ -1081,16 +1084,9 @@ window.addEventListener('load', () => {
   }
 });
 
-// Wait for page assets and styles to completely paint and verify background image loading before capturing
+// Page assets and styles have completed painting, initialize immediately with zero delays
 window.addEventListener('load', () => {
-  const img1 = new Image();
-  img1.src = 'gummy-bg.png';
-  
-  function done() {
-    setTimeout(init, 300);
-  }
-  
-  if (img1.complete) done(); else { img1.onload = done; img1.onerror = done; }
+  init();
 });
 </script>
 </body>
