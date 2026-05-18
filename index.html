@@ -100,13 +100,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 /* Page 3 — clean dark cinematic */
 #p3{background: #0a0a0a; color:#fff; overflow:hidden; position:relative;}
 #p3::before{display:none;}
-#p3-bg-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;filter:grayscale(1);display:block;}
-#p3 .p3-ambient-label {
-  position: absolute; top: 20px; left: 24px;
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
-  color: rgba(200, 149, 108, 0.5); z-index: 10; pointer-events: none; user-select: none;
-}
+#p3-bg-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;filter:grayscale(1);display:block;}
+.p3-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:2;pointer-events:none;}
 #p3 .hero{
   position:relative;
   flex:1;
@@ -119,7 +114,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   text-align:center;
   width:100%;
   height:100%;
-  z-index:2;
+  z-index:3;
 }
 #p3 .p3-logo{
   display:flex;
@@ -324,7 +319,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
   <div class="page" id="p3">
     <canvas id="p3-bg-canvas"></canvas>
-    <div class="p3-ambient-label">Phase Transition</div>
+    <div class="p3-overlay" data-html2canvas-ignore="true"></div>
     <div class="hero">
       <div class="p3-logo">
         <div class="logo-title">Zipper</div>
@@ -1261,6 +1256,7 @@ function initP3Shader() {
   var canvas = document.getElementById('p3-bg-canvas');
   var ctx = canvas.getContext('2d');
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hasResizedForP3 = false;
 
   var pixelScale = 1;
 
@@ -1556,6 +1552,11 @@ function initP3Shader() {
     if (paused || layer < 1) {
       requestAnimationFrame(render);
       return;
+    }
+
+    if (layer === 2 && !hasResizedForP3) {
+      hasResizedForP3 = true;
+      needsResize = true;
     }
 
     if (needsResize) {
