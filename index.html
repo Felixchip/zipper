@@ -75,8 +75,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   text-shadow:0 0 40px rgba(80,255,220,0.15);
   transition: font-size 0.05s ease-out;
 }
-#p2 .controls{
-  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+.global-controls{
+  position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
   display:flex;gap:40px;padding:16px 28px;
   background:rgba(10,10,10,0.75);border:1px solid rgba(255,255,255,0.1);
   border-radius:20px;
@@ -84,14 +84,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
   z-index:15;
-  pointer-events:auto;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.3s ease;
 }
-#p2 .slider-group{display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
-#p2 .slider-group label{font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,.5);font-weight:600;}
-#p2 .custom-slider{position:relative;width:160px;height:14px;display:flex;align-items:center;cursor:pointer;}
-#p2 .slider-track{width:100%;height:2px;background:rgba(255,255,255,0.2);border-radius:2px;}
-#p2 .slider-fill{position:absolute;left:0;height:2px;background:#50ffdc;border-radius:2px;}
-#p2 .slider-thumb{
+.global-controls .slider-group{display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
+.global-controls .slider-group label{font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,.5);font-weight:600;}
+.global-controls .custom-slider{position:relative;width:160px;height:14px;display:flex;align-items:center;cursor:pointer;}
+.global-controls .slider-track{width:100%;height:2px;background:rgba(255,255,255,0.2);border-radius:2px;}
+.global-controls .slider-fill{position:absolute;left:0;height:2px;background:#50ffdc;border-radius:2px;}
+.global-controls .slider-thumb{
   position:absolute;width:14px;height:14px;background:#50ffdc;border-radius:50%;
   transform:translate(-50%,-50%);top:50%;
   box-shadow:0 0 15px rgba(80,255,220,0.8);
@@ -284,7 +286,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 /* Zipper handle */
 #zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
 #zh.done{opacity:0;pointer-events:none;}
-#hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);z-index:20;pointer-events:none;letter-spacing:.1em;text-transform:uppercase;}
+
 </style>
 </head>
 <body>
@@ -354,16 +356,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
     <div class="hero">
       <h1>interactive<br>dynamic typography</h1>
     </div>
-    <div class="controls" data-html2canvas-ignore="true">
-      <div class="slider-group">
-        <label>Text Size</label>
-        <div class="custom-slider" id="text-size-slider">
-          <div class="slider-track"></div>
-          <div class="slider-fill" style="width: 33.3%;"></div>
-          <div class="slider-thumb" style="left: 33.3%;"></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="page" id="p1">
@@ -389,7 +381,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   <line id="zl2" x1="12" y1="22" x2="32" y2="22" stroke="rgba(0,0,0,.5)"  stroke-width="2.5" stroke-linecap="round"/>
   <line id="zl3" x1="12" y1="29" x2="32" y2="29" stroke="rgba(0,0,0,.25)" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
-<div id="hint">Pull down to reveal</div>
+<div class="global-controls" data-html2canvas-ignore="true">
+  <div class="slider-group">
+    <label>Text Size</label>
+    <div class="custom-slider" id="text-size-slider">
+      <div class="slider-track"></div>
+      <div class="slider-fill" style="width: 33.3%;"></div>
+      <div class="slider-thumb" style="left: 33.3%;"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 const W=window.innerWidth, H=window.innerHeight;
@@ -487,6 +488,18 @@ function reset(){
   zipRow=0;active=false;done=false;falling=false;dragging=false;
   zh.style.top='-22px';
   updateHandleStyle();
+  
+  const globalCtrls = document.querySelector('.global-controls');
+  if (globalCtrls) {
+    if (layer >= 1 && layer < LAYERS.length) {
+      globalCtrls.style.opacity = '1';
+      globalCtrls.style.pointerEvents = 'auto';
+    } else {
+      globalCtrls.style.opacity = '0';
+      globalCtrls.style.pointerEvents = 'none';
+    }
+  }
+  
   build();
 }
 
@@ -540,10 +553,18 @@ function advance(){
   const el=document.getElementById(LAYERS[layer].page);
   if(el){el.style.clipPath='';el.style.display='none';}
   layer++;
-  if(layer>0){
-    const hint=document.getElementById('hint');
-    if(hint) hint.style.opacity='0';
+  
+  const globalCtrls = document.querySelector('.global-controls');
+  if (globalCtrls) {
+    if (layer >= 1 && layer < LAYERS.length) {
+      globalCtrls.style.opacity = '1';
+      globalCtrls.style.pointerEvents = 'auto';
+    } else {
+      globalCtrls.style.opacity = '0';
+      globalCtrls.style.pointerEvents = 'none';
+    }
   }
+
   if(layer>=LAYERS.length){zh.classList.add('done');}
   reset();
 }
@@ -667,7 +688,7 @@ function maskTopPage(){
 }
 
 // ── Input ──────────────────────────────────────────────────────
-async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;const hint=document.getElementById('hint');if(hint)hint.style.opacity='0';}
+async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;}
 function dragMove(y){
   if(!dragging||done)return;
   const newRow=Math.max(0,Math.min(ROWS,Math.round(y/sy)));
@@ -1087,8 +1108,40 @@ async function init(){
   }, 100);
 }
 
+// Pull zipper down slightly hint animation
+function pullDownSlightly() {
+  if (active || zipRow > 0 || done) return;
+  if (!pageTextures[layer]) {
+    capturePage(LAYERS[layer].page).then(t => {
+      if (t) pageTextures[layer] = t;
+    });
+  }
+  active = true;
+  const targetRow = Math.round(ROWS * 0.16);
+  let currentRow = 0;
+  
+  function step() {
+    if (currentRow < targetRow && !dragging && !done) {
+      currentRow += 0.8;
+      if (currentRow > targetRow) currentRow = targetRow;
+      const newRow = Math.round(currentRow);
+      if (newRow > zipRow) kick(zipRow, newRow);
+      zipRow = newRow;
+      zh.style.top = Math.max(-22, zipRow * sy - 22) + 'px';
+      requestAnimationFrame(step);
+    }
+  }
+  step();
+}
+
 // Slider interaction
 window.addEventListener('load', () => {
+  const btnp = document.querySelector('.btnp');
+  if (btnp) {
+    btnp.addEventListener('click', () => {
+      pullDownSlightly();
+    });
+  }
   const slider = document.getElementById('text-size-slider');
   if (slider) {
     const fill = slider.querySelector('.slider-fill');
