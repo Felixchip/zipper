@@ -6,6 +6,7 @@
 <title>Zipper — Felix Obinna</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-serif;}
 
@@ -78,20 +79,108 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   box-shadow:0 0 15px rgba(80,255,220,0.8);
 }
 
-/* Page 3 — vibrant */
-#p3{background:#0d001a;}
-#p3::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 30%,rgba(200,100,255,.22) 0%,transparent 60%),
-             radial-gradient(ellipse at 15% 70%,rgba(255,180,50,.18) 0%,transparent 50%),
-             radial-gradient(ellipse at 85% 75%,rgba(50,200,255,.14) 0%,transparent 50%);}
-#p3 .hero{position:relative;}
-#p3 .eyebrow{color:rgba(255,200,80,.85);}
-#p3 h1{font-size:clamp(30px,5vw,52px);font-weight:700;line-height:1.1;max-width:580px;
-  background:linear-gradient(90deg,#ffcc44,#cc88ff,#44ccff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 20px rgba(200,100,255,.3));}
-#p3 .sub{font-size:16px;color:rgba(220,200,255,.7);max-width:420px;line-height:1.6;}
-#p3 .p3-vid{width:100%;max-width:480px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.1);margin-top:12px;}
+/* Page 3 — clean off-white editorial */
+#p3{background:#f5f5f3; color:#000; overflow:hidden;}
+#p3::before{display:none;}
+#p3 .hero{
+  position:relative;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:32px;
+  padding:0 60px;
+  text-align:center;
+  width:100%;
+  height:100%;
+}
+#p3 .p3-logo{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  margin-top:20px;
+}
+#p3 .logo-title{
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:52px;
+  font-weight:700;
+  color:#000;
+  line-height:0.95;
+  letter-spacing:-0.03em;
+}
+#p3 .logo-sub{
+  font-family:'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:0.25em;
+  color:#000;
+  margin-left:0.25em;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+#p3 .logo-sub .triangle{
+  font-size:12px;
+  transform: translateY(-1px);
+}
+#p3 .p3-video-container{
+  position:relative;
+  width:100%;
+  max-width:880px;
+  height:495px;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,0.15);
+}
+#p3 .p3-vid{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:12px;
+  box-shadow:none;
+  margin-top:0;
+}
+#p3 .video-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.15);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+#p3 .overlay-logo{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+#p3 .overlay-title{
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:96px;
+  font-weight:700;
+  color:#fff;
+  line-height:0.9;
+  letter-spacing:-0.03em;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+#p3 .overlay-sub{
+  font-family:'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:0.25em;
+  color:#fff;
+  margin-left:0.25em;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+#p3 .overlay-sub .triangle{
+  font-size:18px;
+}
 
 /* Page 4 — Felix */
 #p4{background:#000;}
@@ -148,10 +237,19 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
   <div class="page" id="p3">
     <div class="hero">
-      <div class="eyebrow">The Final Layer</div>
-      <h1>Where ideas become reality</h1>
-      <div class="sub">One more pull reveals who made this.</div>
-      <video class="p3-vid" src="https://vjs.zencdn.net/v/oceans.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
+      <div class="p3-logo">
+        <div class="logo-title">Stories</div>
+        <div class="logo-sub">BY PRISM<span class="triangle">▲</span></div>
+      </div>
+      <div class="p3-video-container">
+        <video class="p3-vid" src="https://vjs.zencdn.net/v/oceans.mp4" autoplay loop muted playsinline crossorigin="anonymous"></video>
+        <div class="video-overlay">
+          <div class="overlay-logo">
+            <div class="overlay-title">Stories</div>
+            <div class="overlay-sub">BY PRISM<span class="triangle">▲</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -415,6 +513,12 @@ function draw(){
         p3Ctx.save();p3Ctx.beginPath();
         if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
         p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
+        
+        // Draw transparent overlay canvas on top of the live video frame
+        if (p3OverlayCanvas) {
+          p3Ctx.drawImage(p3OverlayCanvas, x, y, w, h);
+        }
+        
         gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
       }
@@ -509,7 +613,7 @@ document.addEventListener('click',e=>{
 
 // ── Capture pages as WebGL textures ────────────────────────────
 let pageTextures=[];
-let p3BaseCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
+let p3BaseCanvas=null, p3OverlayCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
 
 async function capturePage(id){
   const el=document.getElementById(id);
@@ -520,6 +624,20 @@ async function capturePage(id){
   
   if(id==='p3'){
     p3BaseCanvas=canvas;
+    
+    // Capture the transparent overlay canvas
+    const overlayEl = document.querySelector('#p3 .video-overlay');
+    if (overlayEl) {
+      p3OverlayCanvas = await html2canvas(overlayEl, {
+        width: overlayEl.offsetWidth,
+        height: overlayEl.offsetHeight,
+        scale: sc,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false
+      });
+    }
+    
     p3CompositeCanvas=document.createElement('canvas');
     p3CompositeCanvas.width=canvas.width;p3CompositeCanvas.height=canvas.height;
     p3Ctx=p3CompositeCanvas.getContext('2d',{alpha:false});
