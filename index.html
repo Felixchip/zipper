@@ -43,13 +43,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 #p2 .btns{border-color:rgba(255,255,255,.15);color:rgba(200,185,255,.65);}
 
 /* Page 3 — vibrant */
-#p3{background:#0d001a;position:relative;overflow:hidden;}
-.p3-bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0.35;pointer-events:none;}
-#p3::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+#p3{background:#0d001a;}
+#p3::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse at 50% 30%,rgba(200,100,255,.22) 0%,transparent 60%),
              radial-gradient(ellipse at 15% 70%,rgba(255,180,50,.18) 0%,transparent 50%),
              radial-gradient(ellipse at 85% 75%,rgba(50,200,255,.14) 0%,transparent 50%);}
-#p3 .hero{position:relative;z-index:3;}
+#p3 .hero{position:relative;}
 #p3 .eyebrow{color:rgba(255,200,80,.85);}
 #p3 h1{font-size:clamp(30px,5vw,52px);font-weight:700;line-height:1.1;max-width:580px;
   background:linear-gradient(90deg,#ffcc44,#cc88ff,#44ccff);
@@ -109,7 +108,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   </div>
 
   <div class="page" id="p3">
-    <video class="p3-bg-video" id="p3-video" src="https://vjs.zencdn.net/v/oceans.mp4" loop muted playsinline autoplay crossOrigin="anonymous" data-html2canvas-ignore></video>
     <div class="hero">
       <div class="eyebrow">The Final Layer</div>
       <h1>Where ideas become reality</h1>
@@ -182,16 +180,9 @@ varying vec2 vUV;varying float vLight;uniform vec2 uRes;
 void main(){vec2 c=(aPos/uRes)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0,1);vUV=aUV;vLight=aLight;}`;
 
 const FS=`precision mediump float;
-varying vec2 vUV;varying float vLight;
-uniform sampler2D uTex;
-uniform sampler2D uVideoTex;
-uniform bool uUseVideo;
+varying vec2 vUV;varying float vLight;uniform sampler2D uTex;
 void main(){
   vec4 c=texture2D(uTex,vUV);
-  if(uUseVideo){
-    vec4 v=texture2D(uVideoTex,vUV);
-    c=mix(v,c,c.a);
-  }
   gl_FragColor=vec4(c.rgb*clamp(vLight,0.2,1.1), 1.0);
 }`;
 
@@ -208,8 +199,6 @@ const aPos=gl.getAttribLocation(prog,'aPos');
 const aUV=gl.getAttribLocation(prog,'aUV');
 const aLight=gl.getAttribLocation(prog,'aLight');
 const uTex=gl.getUniformLocation(prog,'uTex');
-const uVideoTex=gl.getUniformLocation(prog,'uVideoTex');
-const uUseVideo=gl.getUniformLocation(prog,'uUseVideo');
 gl.enableVertexAttribArray(aPos);gl.enableVertexAttribArray(aUV);gl.enableVertexAttribArray(aLight);
 const pb=gl.createBuffer(),ub=gl.createBuffer(),lb=gl.createBuffer(),ib=gl.createBuffer();
 
@@ -371,15 +360,6 @@ function teeth(){
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
   if(layer<LAYERS.length&&pageTextures[layer]&&!done){
-    const useVideo=(layer===2);
-    gl.uniform1i(uUseVideo,useVideo?1:0);
-    if(useVideo){
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D,videoTex);
-      try{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,document.getElementById('p3-video'));}catch(e){}
-      gl.uniform1i(uVideoTex,1);
-    }
-    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);gl.uniform1i(uTex,0);
     panel(lp,false);panel(rp,true);
   }
@@ -470,7 +450,6 @@ document.addEventListener('click',e=>{
 
 // ── Capture pages as WebGL textures ────────────────────────────
 let pageTextures=[];
-let videoTex;
 
 async function capturePage(id){
   const el=document.getElementById(id);
@@ -488,14 +467,6 @@ async function capturePage(id){
 }
 
 async function init(){
-  // Initialize WebGL video texture
-  videoTex=gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,videoTex);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-
   // Capture each page as a texture
   for(const l of LAYERS){
     const t=await capturePage(l.page);
