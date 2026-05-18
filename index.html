@@ -147,6 +147,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 <script>
 const W=window.innerWidth, H=window.innerHeight;
+const dpr = Math.max(2, window.devicePixelRatio || 2);
 const LAYERS=[
   {page:'p1'},
   {page:'p2'},
@@ -162,8 +163,9 @@ let layer=0;
 const cv=document.getElementById('cv');
 const tc=document.getElementById('tc');
 const zh=document.getElementById('zh');
-cv.width=tc.width=W; cv.height=tc.height=H;
+cv.width=tc.width=W*dpr; cv.height=tc.height=H*dpr;
 const tctx=tc.getContext('2d');
+tctx.scale(dpr, dpr);
 
 // ── WebGL setup ────────────────────────────────────────────────
 const VS=`attribute vec2 aPos;attribute vec2 aUV;attribute float aLight;
@@ -184,7 +186,7 @@ gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));
 gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
 gl.linkProgram(prog);gl.useProgram(prog);
 gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-gl.viewport(0,0,W,H);
+gl.viewport(0,0,cv.width,cv.height);
 gl.uniform2f(gl.getUniformLocation(prog,'uRes'),W,H);
 const aPos=gl.getAttribLocation(prog,'aPos');
 const aUV=gl.getAttribLocation(prog,'aUV');
