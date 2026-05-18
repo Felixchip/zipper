@@ -1267,8 +1267,8 @@ function initP3Shader() {
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2) * pixelScale;
-    width = window.innerWidth;
-    height = window.innerHeight;
+    width = canvas.clientWidth || window.innerWidth;
+    height = canvas.clientHeight || window.innerHeight;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     canvas.style.width = width + 'px';
@@ -1548,13 +1548,18 @@ function initP3Shader() {
     return t * t * (3 - 2 * t);
   }
 
+  var lastShaderLayer = -1;
+
   function render(timestamp) {
     if (paused || layer < 1) {
       requestAnimationFrame(render);
       return;
     }
 
-    if (!width || !height || width !== window.innerWidth || height !== window.innerHeight) {
+    var currentW = canvas.clientWidth || window.innerWidth;
+    var currentH = canvas.clientHeight || window.innerHeight;
+    if (!width || !height || width !== currentW || height !== currentH || layer !== lastShaderLayer) {
+      lastShaderLayer = layer;
       needsResize = true;
     }
 
