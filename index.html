@@ -523,6 +523,17 @@ function teeth(){
 
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  
+  if (active) {
+    cv.style.display = 'block';
+    tcb.style.display = 'block';
+    tc.style.display = 'block';
+  } else {
+    cv.style.display = 'none';
+    tcb.style.display = 'none';
+    tc.style.display = 'none';
+  }
+
   if(layer<LAYERS.length&&pageTextures[layer]&&!done){
     if(layer===1&&p2BaseCanvas&&p2Ctx){
       const shaderCanvas=document.getElementById('p2-shader-canvas');
