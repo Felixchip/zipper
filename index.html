@@ -70,11 +70,11 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 /* Cloth canvas — on top of everything, pointer-events:none so pages stay interactive */
 #cv,#tc{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
-#cv{z-index:50;}
-#tc{z-index:51;}
+#cv{z-index:5;}
+#tc{z-index:6;}
 
 /* Zipper handle */
-#zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:70;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
+#zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
 #zh.done{opacity:0;pointer-events:none;}
 #hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);z-index:20;pointer-events:none;letter-spacing:.1em;text-transform:uppercase;}
 .page-clone {
@@ -258,8 +258,7 @@ PAGES.forEach(id => {
   if (!orig) return;
   const left = orig.cloneNode(true); left.id = id; left.classList.add('page-clone');
   const right = orig.cloneNode(true); right.id = id; right.classList.add('page-clone');
-  const z = window.getComputedStyle(orig).zIndex;
-  left.style.zIndex = right.style.zIndex = 60;
+  left.style.zIndex = right.style.zIndex = 7;
   left.style.display = right.style.display = 'none';
   orig.parentNode.insertBefore(left, orig.nextSibling);
   orig.parentNode.insertBefore(right, left.nextSibling);
@@ -348,7 +347,7 @@ function mesh(getFn,flipU){
     }
     lights.push(lt);
   }
-  for(let r=0;r<ROWS-1;r++)for(let c=0;c<PCOLS-1;c++){const i=r*PCOLS+c;idx.push(i,i+1,i+PCOLS,i+1,i+PCOLS+1,i+PCOLS);}
+  for(let r=0;r<Math.min(zipRow,ROWS-1);r++)for(let c=0;c<PCOLS-1;c++){const i=r*PCOLS+c;idx.push(i,i+1,i+PCOLS,i+1,i+PCOLS+1,i+PCOLS);}
   return{pos,uvs,lights,idx};
 }
 
@@ -370,7 +369,7 @@ function teeth(){
 
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-  if(layer<LAYERS.length&&!done){
+  if(active&&!done&&zipRow>0){
     gl.bindTexture(gl.TEXTURE_2D,textures[layer]);gl.uniform1i(uTex,0);
     panel(lp,false);panel(rp,true);
   }
@@ -379,13 +378,22 @@ function draw(){
 
 function maskTopPage(){
   const id=LAYERS[layer]?.page; if(!id) return;
+  const el=document.getElementById(id);
   const activeClones = clones[id];
   if(!activeClones) return;
   const { left, right } = activeClones;
   
-  if(!active||zipRow<=0){ left.style.display=right.style.display='none'; return; }
-  left.style.display = right.style.display = 'flex';
+  if(!active||zipRow<=0){
+    if(el) el.style.clipPath='';
+    left.style.display=right.style.display='none';
+    return;
+  }
+  // Clip the ORIGINAL page to only show below the zipper (still-zipped portion)
   const openH=Math.round(zipRow*sy);
+  if(el) el.style.clipPath=`polygon(0 ${openH}px, 100% ${openH}px, 100% 100%, 0 100%)`;
+  
+  // Show peeling clones above the zipper
+  left.style.display = right.style.display = 'flex';
   left.style.clipPath = `polygon(0 0, 50% 0, 50% ${openH}px, 0 ${openH}px)`;
   left.style.transformOrigin = `50% ${openH}px`;
   right.style.clipPath = `polygon(50% 0, 100% 0, 100% ${openH}px, 50% ${openH}px)`;
