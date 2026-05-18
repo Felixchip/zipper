@@ -497,7 +497,8 @@ function kick(from,to){
 }
 
 function snapClosed(){
-  for(let r=zipRow;r<ROWS;r++)for(let c=0;c<PCOLS;c++){
+  const startRow = Math.floor(zipRow);
+  for(let r=startRow;r<ROWS;r++)for(let c=0;c<PCOLS;c++){
     const lpt=lp(r,c),rpt=rp(r,c);
     lpt.x=c*psx;lpt.y=r*sy;lpt.px=lpt.x;lpt.py=lpt.y;lpt.freed=false;
     rpt.x=half+c*psx;rpt.y=r*sy;rpt.px=rpt.x;rpt.py=rpt.y;rpt.freed=false;
@@ -657,7 +658,7 @@ function maskTopPage(){
   const el=document.getElementById(id);
   if(!el)return;
   if(!active||zipRow<=0){el.style.clipPath='';return;}
-  const openH=Math.round(zipRow*sy);
+  const openH=zipRow*sy;
   el.style.clipPath=`polygon(0 ${openH}px, 100% ${openH}px, 100% 100%, 0 100%)`;
 }
 
@@ -665,8 +666,10 @@ function maskTopPage(){
 async function dragStart(){if(done||layer>=LAYERS.length)return;if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}active=true;dragging=true;}
 function dragMove(y){
   if(!dragging||done)return;
-  const newRow=Math.max(0,Math.min(ROWS,Math.round(y/sy)));
-  if(newRow>zipRow)kick(zipRow,newRow);
+  const newRow=Math.max(0,Math.min(ROWS,y/sy));
+  const prevInt=Math.floor(zipRow);
+  const newInt=Math.floor(newRow);
+  if(newInt>prevInt)kick(prevInt,newInt);
   zipRow=newRow;
   zh.style.top=Math.max(-22,zipRow*sy-22)+'px';
 }
@@ -1091,23 +1094,23 @@ function pullDownSlightly() {
     });
   }
   active = true;
-  const targetRow = Math.round(ROWS * 0.16);
-  let currentRow = 0;
+  const targetRow = ROWS * 0.16;
   
   function step() {
-    if (currentRow < targetRow && !dragging && !done) {
+    if (zipRow < targetRow && !dragging && !done) {
       // Premium ease-out deceleration for a silky smooth and gentle slide
-      const dist = targetRow - currentRow;
+      const dist = targetRow - zipRow;
       const speed = Math.max(0.08, dist * 0.045);
-      currentRow += speed;
+      const newRow = Math.min(targetRow, zipRow + speed);
       
-      if (currentRow >= targetRow - 0.15) currentRow = targetRow;
-      const newRow = Math.round(currentRow);
-      if (newRow > zipRow) kick(zipRow, newRow);
+      const prevInt = Math.floor(zipRow);
+      const newInt = Math.floor(newRow);
+      if (newInt > prevInt) kick(prevInt, newInt);
+      
       zipRow = newRow;
       zh.style.top = Math.max(-22, zipRow * sy - 22) + 'px';
       
-      if (currentRow < targetRow) {
+      if (zipRow < targetRow) {
         requestAnimationFrame(step);
       }
     }
