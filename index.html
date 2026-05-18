@@ -641,7 +641,9 @@ function tickDangle() {
   const dy = currentZipY - prevZipY;
   prevZipY = currentZipY;
   
-  if (dragging) {
+  const isZipping = Math.abs(dy) > 0.15;
+  
+  if (dragging && isZipping) {
     // Quickly ease back to straight (0 degrees) while actively dragging/zipping
     dangleAngle += (0 - dangleAngle) * 0.28;
     dangleVel = 0;
@@ -843,6 +845,7 @@ window.addEventListener('mousemove',e=>{
   if(dragging){
     if(prevMouseX!==null){
       lastMouseDx = e.clientX-prevMouseX;
+      targetDangleForce += lastMouseDx * 0.15;
     }
     prevMouseX=e.clientX;
     dragMove(e.clientY);
@@ -854,6 +857,7 @@ window.addEventListener('touchmove',e=>{
     const t=e.touches[0];
     if(prevMouseX!==null){
       lastMouseDx = t.clientX-prevMouseX;
+      targetDangleForce += lastMouseDx * 0.15;
     }
     prevMouseX=t.clientX;
     dragMove(t.clientY);
