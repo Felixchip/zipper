@@ -442,7 +442,8 @@ let pageTextures=[];
 async function capturePage(id){
   const el=document.getElementById(id);
   if(!el)return null;
-  const canvas=await html2canvas(el,{width:W,height:H,scale:1,backgroundColor:null,logging:false});
+  const dpr = window.devicePixelRatio || 2;
+  const canvas=await html2canvas(el,{width:W,height:H,scale:Math.max(2, dpr),useCORS:true,backgroundColor:null,logging:false});
   const t=gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D,t);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
