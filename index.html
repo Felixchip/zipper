@@ -360,6 +360,19 @@ function teeth(){
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
   if(layer<LAYERS.length&&pageTextures[layer]&&!done){
+    if(layer===2&&p3BaseCanvas&&p3Ctx){
+      const vid=document.querySelector('#p3 .p3-vid');
+      if(vid&&vid.readyState>=2){
+        const r=vid.getBoundingClientRect(), sc=Math.max(2,window.devicePixelRatio||2);
+        p3Ctx.drawImage(p3BaseCanvas,0,0);
+        const x=r.left*sc, y=r.top*sc, w=r.width*sc, h=r.height*sc;
+        p3Ctx.save();p3Ctx.beginPath();
+        if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
+        p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
+        gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
+      }
+    }
     gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);gl.uniform1i(uTex,0);
     panel(lp,false);panel(rp,true);
   }
@@ -450,12 +463,22 @@ document.addEventListener('click',e=>{
 
 // ── Capture pages as WebGL textures ────────────────────────────
 let pageTextures=[];
+let p3BaseCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
 
 async function capturePage(id){
   const el=document.getElementById(id);
   if(!el)return null;
   const dpr = window.devicePixelRatio || 2;
-  const canvas=await html2canvas(el,{width:W,height:H,scale:Math.max(2, dpr),useCORS:true,backgroundColor:null,logging:false});
+  const sc = Math.max(2, dpr);
+  const canvas=await html2canvas(el,{width:W,height:H,scale:sc,useCORS:true,backgroundColor:null,logging:false});
+  
+  if(id==='p3'){
+    p3BaseCanvas=canvas;
+    p3CompositeCanvas=document.createElement('canvas');
+    p3CompositeCanvas.width=canvas.width;p3CompositeCanvas.height=canvas.height;
+    p3Ctx=p3CompositeCanvas.getContext('2d',{alpha:false});
+  }
+
   const t=gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D,t);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
