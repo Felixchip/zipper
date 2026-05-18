@@ -256,6 +256,8 @@ function tick(){
   if(!active||done)return;
   for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+GRAV;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
   for(let i=0;i<ITERS;i++){relax(LC);relax(RC);}
+  // Pin grabbed particle to mouse position
+  if(clothGrab){clothGrab.x=clothGrabX;clothGrab.y=clothGrabY;}
   if(!falling) snapClosed();
   if(zipRow>=ROWS-1&&!falling&&!done){
     // Free ALL rows — let the whole cloth fall with gravity
@@ -371,10 +373,65 @@ function dragMove(y){
 
 zh.addEventListener('mousedown',e=>{dragStart();e.preventDefault();});
 zh.addEventListener('touchstart',e=>{dragStart();e.preventDefault();},{passive:false});
-window.addEventListener('mouseup',()=>dragging=false);
-window.addEventListener('touchend',()=>dragging=false);
-window.addEventListener('mousemove',e=>{if(dragging)dragMove(e.clientY);});
-window.addEventListener('touchmove',e=>{if(dragging)dragMove(e.touches[0].clientY);},{passive:false});
+window.addEventListener('mouseup',()=>{dragging=false;clothGrabEnd();});
+window.addEventListener('touchend',()=>{dragging=false;clothGrabEnd();});
+window.addEventListener('mousemove',e=>{
+  if(dragging)dragMove(e.clientY);
+  if(clothGrab){clothGrabX=e.clientX;clothGrabY=e.clientY;}
+});
+window.addEventListener('touchmove',e=>{
+  if(dragging)dragMove(e.touches[0].clientY);
+  if(clothGrab){clothGrabX=e.touches[0].clientX;clothGrabY=e.touches[0].clientY;}
+},{passive:false});
+
+// ── Cloth interaction — click/drag freed particles ─────────────
+let clothGrab=null, clothGrabX=0, clothGrabY=0;
+
+function findNearestFreed(x,y,maxDist){
+  let best=null,bestD2=maxDist*maxDist;
+  for(const p of [...L,...R]){
+    if(!p.freed)continue;
+    const dx=p.x-x,dy=p.y-y,d2=dx*dx+dy*dy;
+    if(d2<bestD2){bestD2=d2;best=p;}
+  }
+  return best;
+}
+
+function clothGrabStart(x,y){
+  if(!active||done||dragging)return;
+  const p=findNearestFreed(x,y,80);
+  if(p){clothGrab=p;clothGrabX=x;clothGrabY=y;}
+}
+
+function clothGrabEnd(){
+  clothGrab=null;
+}
+
+function pokeCloth(x,y){
+  if(!active||done)return;
+  const radius=100,force=12;
+  for(const p of [...L,...R]){
+    if(!p.freed)continue;
+    const dx=p.x-x,dy=p.y-y,d2=dx*dx+dy*dy;
+    if(d2<radius*radius&&d2>1){
+      const d=Math.sqrt(d2),f=force*(1-d/radius);
+      p.px-=dx/d*f;p.py-=dy/d*f;
+    }
+  }
+}
+
+document.addEventListener('mousedown',e=>{
+  if(e.target===zh||zh.contains(e.target))return;
+  clothGrabStart(e.clientX,e.clientY);
+});
+document.addEventListener('touchstart',e=>{
+  if(e.target===zh||zh.contains(e.target))return;
+  clothGrabStart(e.touches[0].clientX,e.touches[0].clientY);
+},{passive:true});
+document.addEventListener('click',e=>{
+  if(e.target===zh||zh.contains(e.target))return;
+  pokeCloth(e.clientX,e.clientY);
+});
 
 // ── Capture pages as WebGL textures ────────────────────────────
 let pageTextures=[];
