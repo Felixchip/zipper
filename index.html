@@ -70,11 +70,11 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 /* Cloth canvas — on top of everything, pointer-events:none so pages stay interactive */
 #cv,#tc{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
-#cv{z-index:10;}
-#tc{z-index:11;}
+#cv{z-index:50;}
+#tc{z-index:51;}
 
 /* Zipper handle */
-#zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
+#zh{position:fixed;left:50%;transform:translateX(-50%);top:-22px;z-index:70;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));transition:opacity .3s;}
 #zh.done{opacity:0;pointer-events:none;}
 #hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);z-index:20;pointer-events:none;letter-spacing:.1em;text-transform:uppercase;}
 .page-clone {
@@ -258,24 +258,20 @@ PAGES.forEach(id => {
   if (!orig) return;
   const left = orig.cloneNode(true); left.id = id; left.classList.add('page-clone');
   const right = orig.cloneNode(true); right.id = id; right.classList.add('page-clone');
-  const center = orig.cloneNode(true); center.id = id; center.classList.add('page-clone');
   const z = window.getComputedStyle(orig).zIndex;
-  left.style.zIndex = right.style.zIndex = center.style.zIndex = z;
+  left.style.zIndex = right.style.zIndex = 60;
+  left.style.display = right.style.display = 'none';
   orig.parentNode.insertBefore(left, orig.nextSibling);
   orig.parentNode.insertBefore(right, left.nextSibling);
-  orig.parentNode.insertBefore(center, right.nextSibling);
-  orig.style.display = 'none';
-  clones[id] = { left, right, center };
+  clones[id] = { left, right };
 });
 
 function updateCloneVisibility() {
   PAGES.forEach((id, idx) => {
     const c = clones[id];
     if (c) {
-      if (idx < layer) { c.center.style.display = c.left.style.display = c.right.style.display = 'none'; }
-      else if (idx === layer) { c.center.style.display = 'flex'; c.left.style.display = c.right.style.display = (zipRow > 0) ? 'flex' : 'none'; }
-      else if (idx === layer + 1) { c.center.style.display = 'flex'; c.left.style.display = c.right.style.display = 'none'; c.center.style.clipPath = ''; }
-      else { c.center.style.display = c.left.style.display = c.right.style.display = 'none'; }
+      if (idx === layer) { c.left.style.display = c.right.style.display = (zipRow > 0) ? 'flex' : 'none'; }
+      else { c.left.style.display = c.right.style.display = 'none'; }
     }
   });
 }
@@ -329,7 +325,9 @@ function tick(){
 function advance(){
   if(layer>=LAYERS.length) return;
   const activeId = LAYERS[layer].page;
-  if(clones[activeId]){clones[activeId].left.style.display=clones[activeId].right.style.display=clones[activeId].center.style.display='none';}
+  if(clones[activeId]){clones[activeId].left.style.display=clones[activeId].right.style.display='none';}
+  const el=document.getElementById(activeId);
+  if(el) el.style.display='none';
   layer++;
   if(layer>=LAYERS.length){document.getElementById('zh').classList.add('done');document.getElementById('hint').style.opacity='0';}
   reset();
@@ -350,7 +348,7 @@ function mesh(getFn,flipU){
     }
     lights.push(lt);
   }
-  for(let r=0;r<Math.min(zipRow,ROWS-1);r++)for(let c=0;c<PCOLS-1;c++){const i=r*PCOLS+c;idx.push(i,i+1,i+PCOLS,i+1,i+PCOLS+1,i+PCOLS);}
+  for(let r=0;r<ROWS-1;r++)for(let c=0;c<PCOLS-1;c++){const i=r*PCOLS+c;idx.push(i,i+1,i+PCOLS,i+1,i+PCOLS+1,i+PCOLS);}
   return{pos,uvs,lights,idx};
 }
 
@@ -372,7 +370,7 @@ function teeth(){
 
 function draw(){
   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-  if(active&&!done&&zipRow>0){
+  if(layer<LAYERS.length&&!done){
     gl.bindTexture(gl.TEXTURE_2D,textures[layer]);gl.uniform1i(uTex,0);
     panel(lp,false);panel(rp,true);
   }
@@ -383,48 +381,21 @@ function maskTopPage(){
   const id=LAYERS[layer]?.page; if(!id) return;
   const activeClones = clones[id];
   if(!activeClones) return;
-  const { left, right, center } = activeClones;
+  const { left, right } = activeClones;
   
-  // Set z-indices dynamically so WebGL stays behind active clones and teeth on top
-  const origEl = document.getElementById(id);
-  if(origEl){
-    const z = parseInt(window.getComputedStyle(origEl).zIndex) || 4;
-    cv.style.zIndex = z - 0.2;
-    tc.style.zIndex = z + 0.5;
-  }
-  
-  if(!active||zipRow<=0){ center.style.clipPath=''; center.style.transform=''; left.style.display=right.style.display='none'; return; }
+  if(!active||zipRow<=0){ left.style.display=right.style.display='none'; return; }
   left.style.display = right.style.display = 'flex';
   const openH=Math.round(zipRow*sy);
-  center.style.clipPath = `polygon(0 ${openH}px, 100% ${openH}px, 100% 100%, 0 100%)`;
   left.style.clipPath = `polygon(0 0, 50% 0, 50% ${openH}px, 0 ${openH}px)`;
   left.style.transformOrigin = `50% ${openH}px`;
   right.style.clipPath = `polygon(50% 0, 100% 0, 100% ${openH}px, 50% ${openH}px)`;
   right.style.transformOrigin = `50% ${openH}px`;
   
-  let leftAngleDeg = 0;
-  let rightAngleDeg = 0;
-  let peelX = 14;
+  const progress = zipRow / ROWS;
+  const peelX = 14 + progress * 26, angle = 2.5 + progress * 6.5;
   
-  if (zipRow > 0) {
-    const pPivotL = lp(zipRow, PCOLS-1);
-    const pTopL = lp(0, PCOLS-1);
-    const dxL = pPivotL.x - pTopL.x;
-    const dyL = pPivotL.y - pTopL.y;
-    leftAngleDeg = Math.atan2(dxL, dyL) * (180 / Math.PI);
-    
-    const pPivotR = rp(zipRow, 0);
-    const pTopR = rp(0, 0);
-    const dxR = pTopR.x - pPivotR.x;
-    const dyR = pPivotR.y - pTopR.y;
-    rightAngleDeg = Math.atan2(dxR, dyR) * (180 / Math.PI);
-    
-    const activeRow = Math.max(0, zipRow - 1);
-    peelX = 14 + (rp(activeRow, 0).x - lp(activeRow, PCOLS-1).x) * 0.4;
-  }
-  
-  left.style.transform = `translate3d(-${peelX}px, 0, 0) rotateZ(-${leftAngleDeg}deg)`;
-  right.style.transform = `translate3d(${peelX}px, 0, 0) rotateZ(${rightAngleDeg}deg)`;
+  left.style.transform = `translate3d(-${peelX}px, 0, 0) rotateZ(-${angle}deg)`;
+  right.style.transform = `translate3d(${peelX}px, 0, 0) rotateZ(${angle}deg)`;
 }
 
 function dragStart(){ if(done||layer>=LAYERS.length)return; active=true;dragging=true; }
