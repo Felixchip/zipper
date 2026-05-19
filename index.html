@@ -13,7 +13,7 @@
 html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-serif;}
 
 #stack{position:fixed;inset:0;}
-.page{position:absolute;inset:0;display:flex;flex-direction:column;}
+.page{position:absolute;inset:0;width:100%;height:100%;display:flex;flex-direction:column;}
 
 #p4{z-index:1;}
 #p3{z-index:2;}
@@ -100,7 +100,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 /* Page 3 — clean dark cinematic */
 #p3{background: #0a0a0a; color:#fff; overflow:hidden; position:relative;}
 #p3::before{display:none;}
-#p3-bg-canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1;pointer-events:none;filter:grayscale(1);display:none;}
+#p3-bg-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;filter:grayscale(1);display:block;}
 .p3-overlay{display:none;}
 #p3 .hero{
   position:relative;
@@ -292,7 +292,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 </head>
 <body>
 
-<canvas id="p3-bg-canvas"></canvas>
 <div id="stack">
   <div class="page" id="p4">
     <div class="hero">
@@ -319,6 +318,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   </div>
 
   <div class="page" id="p3">
+    <canvas id="p3-bg-canvas"></canvas>
     <div class="hero">
       <div class="p3-logo">
         <div class="logo-title">Zipper</div>
@@ -675,9 +675,6 @@ function advance(){
   const el=document.getElementById(LAYERS[layer].page);
   if(el){el.style.clipPath='';el.style.display='none';}
   layer++;
-  // Show shader canvas only on Page 3
-  const p3Canvas=document.getElementById('p3-bg-canvas');
-  if(p3Canvas) p3Canvas.style.display = (layer===2) ? 'block' : 'none';
   if(layer>=LAYERS.length){zh.classList.add('done');}
   reset();
 }
