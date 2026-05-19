@@ -100,7 +100,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 /* Page 3 — clean dark cinematic */
 #p3{background: #0a0a0a; color:#fff; overflow:hidden; position:relative;}
 #p3::before{display:none;}
-#p3-bg-canvas{position:absolute;inset:0;width:100% !important;height:100% !important;z-index:1;pointer-events:none;filter:grayscale(1);display:block;}
+#p3-bg-canvas{display:none;}
 .p3-overlay{display:none;}
 #p3 .hero{
   position:relative;
@@ -766,12 +766,6 @@ function draw(){
         // Clear composite canvas background to solid dark base
         p3Ctx.fillStyle = '#0a0a0a';
         p3Ctx.fillRect(0,0,p3CompositeCanvas.width,p3CompositeCanvas.height);
-        
-        // Draw the dynamic background shader frame onto composite canvas
-        const shaderCanvas=document.getElementById('p3-bg-canvas');
-        if(shaderCanvas){
-          p3Ctx.drawImage(shaderCanvas,0,0,p3CompositeCanvas.width,p3CompositeCanvas.height);
-        }
         
         // Overlay the transparent DOM screenshot of Page 3 containing texts/layouts
         p3Ctx.drawImage(p3BaseCanvas,0,0);
@@ -1812,7 +1806,7 @@ function initP3Shader() {
 
 async function init(){
   initAuroraShader();
-  initP3Shader();
+  // initP3Shader(); // Shader removed from Page 3
   
   // Start simulation immediately so the UI paints and is interactive instantly
   build();
