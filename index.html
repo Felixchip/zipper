@@ -166,6 +166,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   border-radius:20px;
   overflow:hidden;
   box-shadow:0 40px 120px rgba(0,0,0,0.9);
+  background:#000;
 }
 #p3 .p3-vid{
   width:100%;
@@ -787,10 +788,7 @@ function draw(){
           p3Ctx.drawImage(shaderCanvas,0,0,p3CompositeCanvas.width,p3CompositeCanvas.height);
         }
         
-        // Overlay the transparent DOM screenshot of Page 3 containing texts/layouts
-        p3Ctx.drawImage(p3BaseCanvas,0,0);
-        
-        // Draw video overlay on top if ready
+        // Draw video first if ready (so DOM screenshot overlay sits on top of it!)
         if(vid&&vid.readyState>=2){
           const r=vid.getBoundingClientRect(), sc=Math.max(2,window.devicePixelRatio||2);
           const x=r.left*sc, y=r.top*sc, w=r.width*sc, h=r.height*sc;
@@ -798,6 +796,9 @@ function draw(){
           if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
           p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
         }
+        
+        // Overlay the transparent DOM screenshot of Page 3 containing texts/layouts/scrubber on top!
+        p3Ctx.drawImage(p3BaseCanvas,0,0);
         
         gl.bindTexture(gl.TEXTURE_2D,pageTextures[layer]);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,p3CompositeCanvas);
@@ -832,6 +833,11 @@ async function dragStart(y){
   lastMouseDx = 0;
   grabOffsetY = y - (zipRow * sy);
   dangleVel += (Math.random() - 0.5) * 18; // Playful kick on click!
+  
+  // Asynchronously recapture the page in the background to sync active dynamic layout changes
+  capturePage(LAYERS[layer].page).then(t => {
+    if(t) pageTextures[layer] = t;
+  });
 }
 function dragMove(y){
   if(!dragging||done)return;
@@ -1974,6 +1980,11 @@ window.addEventListener('load', () => {
     const fill = p3Container.querySelector('.p3-progress-fill');
     const thumb = p3Container.querySelector('.p3-progress-thumb');
     const timeDisp = p3Container.querySelector('.p3-time-display');
+
+    vid.addEventListener('loadedmetadata', async () => {
+      const t = await capturePage('p3');
+      if (t) pageTextures[2] = t;
+    });
 
     function togglePlay() {
       if (vid.paused) {
