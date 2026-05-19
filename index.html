@@ -154,7 +154,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   position:relative;
   width:100%;
   max-width:880px;
-  height:495px;
+  aspect-ratio:16/9;
   border-radius:20px;
   overflow:hidden;
   box-shadow:0 40px 120px rgba(0,0,0,0.9);
@@ -643,7 +643,8 @@ function tick(){
     zh.style.top=Math.max(-10,zipRow*sy-10)+'px';
   }
 
-  for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+GRAV;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
+  const currentGrav = falling ? GRAV * 1.8 : GRAV;
+  for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+currentGrav;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
   for(let i=0;i<ITERS;i++){relax(LC);relax(RC);}
   // Pin grabbed particle to mouse position
   if(clothGrab){clothGrab.x=clothGrabX;clothGrab.y=clothGrabY;}
