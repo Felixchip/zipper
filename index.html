@@ -503,7 +503,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 
 <script>
 const W=window.innerWidth, H=window.innerHeight;
-const dpr = Math.max(2, window.devicePixelRatio || 2);
+const dpr = Math.min(1.5, window.devicePixelRatio || 1);
 const LAYERS=[
   {page:'p1'},
   {page:'p2'},
@@ -555,7 +555,7 @@ gl.enableVertexAttribArray(aPos);gl.enableVertexAttribArray(aUV);gl.enableVertex
 const pb=gl.createBuffer(),ub=gl.createBuffer(),lb=gl.createBuffer(),ib=gl.createBuffer();
 
 // ── Physics ────────────────────────────────────────────────────
-const PCOLS=40,ROWS=48,GRAV=0.6,DAMP=0.95,ITERS=4,SAG=1.05;
+const PCOLS=25,ROWS=30,GRAV=0.6,DAMP=0.95,ITERS=3,SAG=1.05;
 const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
 const flatCz=4*psx*sy; // cross product when perfectly flat
 let L=[],R=[],LC=[],RC=[];
@@ -981,8 +981,8 @@ async function capturePage(id){
   try {
     const el=document.getElementById(id);
     if(!el)return null;
-    const dpr = window.devicePixelRatio || 2;
-    const sc = Math.max(2, dpr);
+    const dpr = window.devicePixelRatio || 1;
+    const sc = Math.min(1.5, dpr);
     
     const origBg = el.style.background;
     if(id==='p2'||id==='p3'){
@@ -1327,12 +1327,12 @@ function initP3Shader() {
   var pixelScale = 1;
 
   var WAVE_SPEED = 0.5;
-  var PARTICLE_DENSITY = 1.0;
+  var PARTICLE_DENSITY = 0.6;
 
   var width, height, dpr, cx, cy;
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2) * pixelScale;
+    dpr = Math.min(window.devicePixelRatio || 1, 1.0) * pixelScale;
     width = window.innerWidth;
     height = window.innerHeight;
     canvas.width = Math.round(width * dpr);
