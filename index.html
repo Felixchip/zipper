@@ -818,7 +818,8 @@ function draw(){
             }
           }
           if(p3VideoRect){
-            const sc=Math.max(2,window.devicePixelRatio||2);
+            const dpr_vid = window.devicePixelRatio || 1;
+            const sc = Math.min(1.5, dpr_vid);
             const x=p3VideoRect.left*sc, y=p3VideoRect.top*sc, w=p3VideoRect.width*sc, h=p3VideoRect.height*sc;
             p3Ctx.save();p3Ctx.beginPath();
             if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
