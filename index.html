@@ -299,6 +299,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 /* Zipper handle */
 #zh{position:fixed;left:50%;transform:translateX(-50%);width:113px;height:110px;top:-10px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 20px 35px rgba(0,0,0,0.75)) drop-shadow(0 6px 12px rgba(0,0,0,0.55));transition:opacity .3s;overflow:visible;}
 #zh.done{opacity:0;pointer-events:none;}
+#zh.zh-dropping-in{transition:top 0.65s cubic-bezier(0.19, 1, 0.22, 1) !important;}
 #zipper-svg{width:100%;height:100%;display:block;}
 
 </style>
@@ -596,8 +597,23 @@ function updateHandleStyle(){}
 function reset(){
   zipRow=0;active=false;done=false;falling=false;dragging=false;
   if(layer<LAYERS.length){
-    zh.style.top='-10px';
+    // Place off-screen at the top instantly
+    zh.classList.remove('zh-dropping-in');
+    zh.style.top = '-150px';
     zh.classList.remove('done');
+    
+    // Smoothly animate down to docked position on next frames
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        zh.classList.add('zh-dropping-in');
+        zh.style.top = '-10px';
+      });
+    });
+    
+    // Remove the transition class after animation to ensure drag moves are 1:1 responsive
+    setTimeout(() => {
+      zh.classList.remove('zh-dropping-in');
+    }, 700);
   }
   dangleAngle = 0; dangleVel = 0; prevZipY = 0; prevMouseX = null; targetDangleForce = 0;
   updateHandleStyle();
@@ -627,8 +643,8 @@ function relax(cs){
 function tick(){
   if(!active||done)return;
   
-  // Auto-unzip the last 8%: slide the zipper head to the bottom automatically
-  if(zipRow/ROWS>=0.92&&zipRow<ROWS){
+  // Auto-unzip the last 10%: slide the zipper head to the bottom automatically
+  if(zipRow/ROWS>=0.90&&zipRow<ROWS){
     dragging=false;
     const prevInt=Math.floor(zipRow);
     zipRow+=0.8;
