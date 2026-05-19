@@ -557,6 +557,7 @@ const half=W/2,psx=half/(PCOLS-1),sy=H/(ROWS-1);
 const flatCz=4*psx*sy; // cross product when perfectly flat
 let L=[],R=[],LC=[],RC=[];
 let zipRow=0,dragging=false,active=false,done=false,falling=false;
+let grabOffsetY = 0;
 let dangleAngle = 0, dangleVel = 0, prevZipY = 0, prevMouseX = null, targetDangleForce = 0;
 
 const lp=(r,c)=>L[r*PCOLS+c];
@@ -813,18 +814,20 @@ function maskTopPage(){
 }
 
 // ── Input ──────────────────────────────────────────────────────
-async function dragStart(){
+async function dragStart(y){
   if(done||layer>=LAYERS.length)return;
   if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}
   active=true;
   dragging=true;
   prevMouseX = null;
   lastMouseDx = 0;
+  grabOffsetY = y - (zipRow * sy);
   dangleVel += (Math.random() - 0.5) * 18; // Playful kick on click!
 }
 function dragMove(y){
   if(!dragging||done)return;
-  const newRow=Math.max(0,Math.min(ROWS,y/sy));
+  const targetY = y - grabOffsetY;
+  const newRow=Math.max(0,Math.min(ROWS,targetY/sy));
   const prevInt=Math.floor(zipRow);
   const newInt=Math.floor(newRow);
   if(newInt>prevInt)kick(prevInt,newInt);
@@ -832,8 +835,8 @@ function dragMove(y){
   zh.style.top=Math.max(-10,zipRow*sy-10)+'px';
 }
 
-zh.addEventListener('mousedown',e=>{dragStart();e.preventDefault();});
-zh.addEventListener('touchstart',e=>{dragStart();e.preventDefault();},{passive:false});
+zh.addEventListener('mousedown',e=>{dragStart(e.clientY);e.preventDefault();});
+zh.addEventListener('touchstart',e=>{dragStart(e.touches[0].clientY);e.preventDefault();},{passive:false});
 window.addEventListener('mouseup',()=>{
   if(dragging){
     dangleVel += lastMouseDx * 0.28; // Parting swing based on release speed!
