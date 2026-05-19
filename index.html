@@ -643,8 +643,8 @@ function relax(cs){
 function tick(){
   if(!active||done)return;
   
-  // Auto-unzip the last 10%: slide the zipper head to the bottom automatically
-  if(zipRow/ROWS>=0.90&&zipRow<ROWS){
+  // Auto-unzip the last 15%: slide the zipper head to the bottom automatically
+  if(zipRow/ROWS>=0.85&&zipRow<ROWS){
     dragging=false;
     const prevInt=Math.floor(zipRow);
     zipRow+=0.8;
