@@ -166,7 +166,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
   border-radius:20px;
   overflow:hidden;
   box-shadow:0 40px 120px rgba(0,0,0,0.9);
-  background:#000;
+  background:transparent;
 }
 #p3 .p3-vid{
   width:100%;
@@ -790,11 +790,19 @@ function draw(){
         
         // Draw video first if ready (so DOM screenshot overlay sits on top of it!)
         if(vid&&vid.readyState>=2){
-          const r=vid.getBoundingClientRect(), sc=Math.max(2,window.devicePixelRatio||2);
-          const x=r.left*sc, y=r.top*sc, w=r.width*sc, h=r.height*sc;
-          p3Ctx.save();p3Ctx.beginPath();
-          if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
-          p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
+          if(!p3VideoRect){
+            const r=vid.getBoundingClientRect();
+            if(r.width>0){
+              p3VideoRect={left:r.left,top:r.top,width:r.width,height:r.height};
+            }
+          }
+          if(p3VideoRect){
+            const sc=Math.max(2,window.devicePixelRatio||2);
+            const x=p3VideoRect.left*sc, y=p3VideoRect.top*sc, w=p3VideoRect.width*sc, h=p3VideoRect.height*sc;
+            p3Ctx.save();p3Ctx.beginPath();
+            if(p3Ctx.roundRect) p3Ctx.roundRect(x,y,w,h,12*sc); else p3Ctx.rect(x,y,w,h);
+            p3Ctx.clip();p3Ctx.drawImage(vid,x,y,w,h);p3Ctx.restore();
+          }
         }
         
         // Overlay the transparent DOM screenshot of Page 3 containing texts/layouts/scrubber on top!
@@ -826,6 +834,7 @@ function maskTopPage(){
 // ── Input ──────────────────────────────────────────────────────
 async function dragStart(y){
   if(done||layer>=LAYERS.length)return;
+  p3VideoRect = null;
   if(!pageTextures[layer]){pageTextures[layer]=await capturePage(LAYERS[layer].page);}
   active=true;
   dragging=true;
@@ -945,6 +954,7 @@ document.addEventListener('click',e=>{
 let pageTextures=[null, null, null];
 let p2BaseCanvas=null, p2CompositeCanvas=null, p2Ctx=null;
 let p3BaseCanvas=null, p3CompositeCanvas=null, p3Ctx=null;
+let p3VideoRect=null;
 
 async function capturePage(id){
   try {
@@ -1255,7 +1265,10 @@ function initAuroraShader() {
     }
   }
 
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', () => {
+    resize();
+    p3VideoRect = null;
+  });
   resize();
 
   window.addEventListener('mousemove', e => {
