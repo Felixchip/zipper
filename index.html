@@ -623,6 +623,18 @@ function relax(cs){
 
 function tick(){
   if(!active||done)return;
+  
+  // Auto-unzip the last 8%: slide the zipper head to the bottom automatically
+  if(zipRow/ROWS>=0.92&&zipRow<ROWS){
+    dragging=false;
+    const prevInt=Math.floor(zipRow);
+    zipRow+=0.8;
+    if(zipRow>=ROWS)zipRow=ROWS;
+    const newInt=Math.floor(zipRow);
+    if(newInt>prevInt)kick(prevInt,newInt);
+    zh.style.top=Math.max(-10,zipRow*sy-10)+'px';
+  }
+
   for(const p of [...L,...R]){const vx=(p.x-p.px)*DAMP,vy=(p.y-p.py)*DAMP;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+GRAV;if(p.y>H+900){p.y=H+900;p.py=p.y;}if(p.x<-W*2)p.x=-W*2;if(p.x>W*3)p.x=W*3;}
   for(let i=0;i<ITERS;i++){relax(LC);relax(RC);}
   // Pin grabbed particle to mouse position
