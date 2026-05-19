@@ -595,7 +595,10 @@ function updateHandleStyle(){}
 
 function reset(){
   zipRow=0;active=false;done=false;falling=false;dragging=false;
-  zh.style.top='-10px';
+  if(layer<LAYERS.length){
+    zh.style.top='-10px';
+    zh.classList.remove('done');
+  }
   dangleAngle = 0; dangleVel = 0; prevZipY = 0; prevMouseX = null; targetDangleForce = 0;
   updateHandleStyle();
   build();
