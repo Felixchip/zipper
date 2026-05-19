@@ -287,8 +287,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 #tc{z-index:6;}
 
 /* Zipper handle */
-#zh{position:fixed;left:50%;transform:translateX(-50%);width:113px;height:110px;top:-10px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 12px 28px rgba(0,0,0,0.6)) drop-shadow(0 4px 10px rgba(0,0,0,0.45));transition:opacity .3s;overflow:visible;}
+#zh{position:fixed;left:50%;transform:translateX(-50%);width:113px;height:110px;top:-10px;z-index:20;cursor:ns-resize;touch-action:none;user-select:none;filter:drop-shadow(0 20px 35px rgba(0,0,0,0.75)) drop-shadow(0 6px 12px rgba(0,0,0,0.55));transition:opacity .3s;overflow:visible;}
 #zh.done{opacity:0;pointer-events:none;}
+#zipper-svg{width:100%;height:100%;display:block;}
 
 </style>
 </head>
@@ -388,7 +389,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 <canvas id="cv"></canvas>
 <canvas id="tc"></canvas>
 
-<svg id="zh" viewBox="-115 0 400 390" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+<div id="zh">
+<svg id="zipper-svg" viewBox="-115 0 400 390" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
 <g filter="url(#filter0_ii_157_25)">
 <path d="M55.159 2.30884C56.2509 1.14136 57.6393 0.5 59.0748 0.5H89.0213C92.3527 0.5 95.0533 3.88343 95.0533 8.05709V174.943C95.0533 179.117 92.3527 182.5 89.0213 182.5H23.4978C19.86 182.5 17.0499 178.496 17.5154 173.976L22.4358 126.201C22.5882 124.722 22.3877 123.219 21.8597 121.882L0.626026 68.1235C-0.599575 65.0205 0.0145604 61.271 2.11651 59.0235L55.159 2.30884Z" fill="url(#paint0_linear_157_25)"/>
 <path d="M114.841 2.30884C113.749 1.14136 112.361 0.5 110.925 0.5H80.9787C77.6473 0.5 74.9467 3.88343 74.9467 8.05709V174.943C74.9467 179.117 77.6473 182.5 80.9787 182.5H146.502C150.14 182.5 152.95 178.496 152.485 173.976L147.564 126.201C147.412 124.722 147.612 123.219 148.14 121.882L169.374 68.1235C170.6 65.0205 169.985 61.271 167.883 59.0235L114.841 2.30884Z" fill="url(#paint1_linear_157_25)"/>
@@ -493,6 +495,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
 </linearGradient>
 </defs>
 </svg>
+</div>
 
 
 <script>
