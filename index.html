@@ -338,7 +338,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-seri
         <div class="logo-sub">STORIES</div>
       </div>
       <div class="p3-video-container">
-        <video class="p3-vid" src="https://vjs.zencdn.net/v/oceans.mp4" autoplay loop muted playsinline crossorigin="anonymous" data-html2canvas-ignore="true"></video>
+        <video class="p3-vid" src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" autoplay loop muted playsinline crossorigin="anonymous" data-html2canvas-ignore="true"></video>
         <div class="video-overlay">
           <!-- Centered play/pause button -->
           <button class="p3-play-btn" aria-label="Play/Pause">
@@ -980,7 +980,12 @@ async function capturePage(id){
       }
     }
 
-    const t=gl.createTexture();
+    const layerIdx = id === 'p1' ? 0 : (id === 'p2' ? 1 : 2);
+    let t = pageTextures[layerIdx];
+    if (!t) {
+      t = gl.createTexture();
+      pageTextures[layerIdx] = t;
+    }
     gl.bindTexture(gl.TEXTURE_2D,t);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
@@ -995,7 +1000,12 @@ async function capturePage(id){
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = id === 'p1' ? '#1c1b18' : (id === 'p2' ? '#0a0618' : '#0c152a');
     ctx.fillRect(0,0,128,128);
-    const t=gl.createTexture();
+    const layerIdx = id === 'p1' ? 0 : (id === 'p2' ? 1 : 2);
+    let t = pageTextures[layerIdx];
+    if (!t) {
+      t = gl.createTexture();
+      pageTextures[layerIdx] = t;
+    }
     gl.bindTexture(gl.TEXTURE_2D,t);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
